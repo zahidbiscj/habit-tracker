@@ -1,8 +1,5 @@
 # Habit Tracker App - Final V1 Requirements
 
----
-## Architecture & Decoupling
-
 **Goal:** The codebase must be loosely coupled and provider-agnostic, so the backend (Firebase, Supabase, REST API, etc.) can be swapped with minimal changes to the UI/business logic.
 
 ### Key Principles
