@@ -1,0 +1,16 @@
+[
+  {
+    "id": "insp_001",
+    "type": "ayah",
+    "ref": "Quran 94:5-6",
+    "text": "Indeed, with hardship [will be] ease.",
+    "source": "Sahih International (public domain alternative recommended)"
+  },
+  {
+    "id": "insp_002",
+    "type": "hadith",
+    "ref": "Riyadh as-Salihin 21",
+    "text": "The most beloved deeds to Allah are those which are done regularly, even if they are small.",
+    "source": "Reference only; link to trusted source"
+  }
+]
