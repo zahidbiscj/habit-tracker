@@ -1,0 +1,32 @@
+<div class="ht-input-wrapper">
+  <label *ngIf="label" class="ht-input-label" [class.required]="required">
+    {{ label }}
+  </label>
+  
+  <div class="ht-input-field">
+    <span *ngIf="icon" [class]="'ht-input-icon ' + icon + ' ' + iconPosition"></span>
+    
+    <input 
+      pInputText
+      [type]="type"
+      [(ngModel)]="value"
+      (ngModelChange)="onValueChange($event)"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [readonly]="readonly"
+      [maxlength]="maxLength"
+      [class.has-icon]="icon"
+      [class.icon-left]="icon && iconPosition === 'left'"
+      [class.icon-right]="icon && iconPosition === 'right'"
+      [class.error]="errorMessage"
+    />
+  </div>
+
+  <small *ngIf="helperText && !errorMessage" class="ht-input-helper">
+    {{ helperText }}
+  </small>
+  
+  <small *ngIf="errorMessage" class="ht-input-error">
+    {{ errorMessage }}
+  </small>
+</div>

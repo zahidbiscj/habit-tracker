@@ -1,0 +1,30 @@
+<div class="ht-datepicker-wrapper">
+  <label *ngIf="label" class="ht-datepicker-label" [class.required]="required">
+    {{ label }}
+  </label>
+  
+  <p-calendar
+    [(ngModel)]="value"
+    (ngModelChange)="onValueChange($event)"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [readonly]="readonly"
+    [showTime]="showTime"
+    [showIcon]="showIcon"
+    [dateFormat]="dateFormat"
+    [minDate]="minDate"
+    [maxDate]="maxDate"
+    [disabledDates]="disabledDates"
+    [selectionMode]="selectionMode"
+    [class.error]="errorMessage"
+    styleClass="ht-datepicker-field"
+  ></p-calendar>
+
+  <small *ngIf="helperText && !errorMessage" class="ht-datepicker-helper">
+    {{ helperText }}
+  </small>
+  
+  <small *ngIf="errorMessage" class="ht-datepicker-error">
+    {{ errorMessage }}
+  </small>
+</div>

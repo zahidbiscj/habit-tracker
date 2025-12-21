@@ -1,0 +1,26 @@
+<div class="ht-textarea-wrapper">
+  <label *ngIf="label" class="ht-textarea-label" [class.required]="required">
+    {{ label }}
+  </label>
+  
+  <textarea 
+    pInputTextarea
+    [(ngModel)]="value"
+    (ngModelChange)="onValueChange($event)"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [readonly]="readonly"
+    [rows]="rows"
+    [maxlength]="maxLength"
+    [autoResize]="autoResize"
+    [class.error]="errorMessage"
+  ></textarea>
+
+  <small *ngIf="helperText && !errorMessage" class="ht-textarea-helper">
+    {{ helperText }}
+  </small>
+  
+  <small *ngIf="errorMessage" class="ht-textarea-error">
+    {{ errorMessage }}
+  </small>
+</div>

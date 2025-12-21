@@ -1,0 +1,93 @@
+/* Mobile-first reusable input styles */
+.ht-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.ht-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.ht-input-label.required::after {
+  content: ' *';
+  color: #e74c3c;
+}
+
+.ht-input-field {
+  position: relative;
+  width: 100%;
+}
+
+.ht-input-field input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.ht-input-field input.has-icon.icon-left {
+  padding-left: 2.5rem;
+}
+
+.ht-input-field input.has-icon.icon-right {
+  padding-right: 2.5rem;
+}
+
+.ht-input-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ht-input-field input.error {
+  border-color: #e74c3c;
+}
+
+.ht-input-field input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.ht-input-field input[readonly] {
+  background-color: #f9f9f9;
+}
+
+.ht-input-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 1rem;
+}
+
+.ht-input-icon.left {
+  left: 0.75rem;
+}
+
+.ht-input-icon.right {
+  right: 0.75rem;
+}
+
+.ht-input-helper {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.ht-input-error {
+  font-size: 0.75rem;
+  color: #e74c3c;
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .ht-input-field input {
+    font-size: 0.9375rem;
+  }
+}

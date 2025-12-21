@@ -67,10 +67,13 @@ A simple habit tracking web application where admins create goals/tasks and user
 
 ## Tech Stack
 - **Frontend**: Angular 18+ with PWA support
+- **UI Components**: PrimeNG (tables, forms, components)
+- **Styling**: Custom CSS only (mobile-first design)
 - **Backend**: Firebase (Firestore, Auth, Hosting)
 - **Deployment**: GitHub Actions → Firebase Hosting
 - **Notifications**: Firebase Cloud Messaging (Web Push)
 - **Offline Support**: Service Worker + Firestore offline persistence
+- **Timezone**: Asia/Dhaka (UTC+6)
 
 ---
 
@@ -209,15 +212,14 @@ A simple habit tracking web application where admins create goals/tasks and user
 ```
 
 **Flow**:
-1. User enters name, email, password, and selects role
+1. User enters name, email, password
 2. System validates:
    - Email format is valid
    - Passwords match
 3. System creates Firebase Auth user
-4. System creates User document in Firestore
-5. User is redirected based on role:
-   - Admin → `/admin/goals`
-   - User → `/user/dashboard`
+4. System creates User document in Firestore with role='user' (default)
+5. User is redirected to `/user/dashboard`
+6. **Note**: First registered user and all subsequent users start as 'user' role. Admin must manually promote users to 'admin' role via Firebase Console or admin panel (future feature)
 
 **Sample JSON (User document created in Firestore)**:
 ```json
@@ -274,7 +276,7 @@ A simple habit tracking web application where admins create goals/tasks and user
 │  📊 Dashboard    │
 │  🎯 Goals        │
 │  🔔 Notifications│
-│  👤 Profile      │
+│  👤 Settings     │
 │  🚪 Logout       │
 └──────────────────┘
 ```
@@ -329,6 +331,27 @@ A simple habit tracking web application where admins create goals/tasks and user
 │ ← Cancel | Create New Goal                   [Save]     │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
+│ 📅 Select Goal Period                                   │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ ← December 2025 →                                  │ │
+│ │ Sun  Mon  Tue  Wed  Thu  Fri  Sat                 │ │
+│ │  1    2    3    4    5    6    7                  │ │
+│ │  8    9   10   11   12   13   14                  │ │
+│ │ 15   16   17   18   19   20   21                  │ │
+│ │ 22   23   24   25   26   27   28                  │ │
+│ │ 29   30   31                                       │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                          │
+│ ┌─ Goals on Dec 15 ────────────────────────────────┐   │
+│ │ 1. On Time Salah (Dec 1-31)                      │   │
+│ │ 2. 10 Minute Quran (Dec 10-20)                   │   │
+│ │ ... [View All 5 Goals] ←────────────────────────┐│   │
+│ └──────────────────────────────────────────────────┘   │
+│                                                          │
+│ Instructions: Click to select start date, then click    │
+│ another date to select end date. Click any date to      │
+│ view first 2 goals. Click 'View All' for complete list. │
+│                                                          │
 │ Goal Name *                                             │
 │ [_______________________________________________]        │
 │                                                          │
@@ -336,11 +359,11 @@ A simple habit tracking web application where admins create goals/tasks and user
 │ [_______________________________________________]        │
 │ [_______________________________________________]        │
 │                                                          │
-│ Start Date *                                            │
-│ [📅 2025-12-18]                                         │
+│ Start Date * (Auto-filled from calendar)                │
+│ [📅 2025-12-08] (Read-only)                            │
 │                                                          │
-│ End Date                                                │
-│ [📅 Select]                                             │
+│ End Date (Auto-filled from calendar)                    │
+│ [📅 2025-12-22] (Read-only)                            │
 │                                                          │
 ├─────────────────────────────────────────────────────────┤
 │ Tasks (Manual Entry) *                                  │
@@ -376,11 +399,29 @@ A simple habit tracking web application where admins create goals/tasks and user
 └─────────────────────────────────────────────────────────┘
 ```
 
+**Calendar Features**:
+- **Month Navigation**: Use ← → arrows to navigate between months
+- **Date Range Selection**: 
+  - First click = Start Date
+  - Second click = End Date
+  - No visual highlighting on calendar
+- **View Existing Goals**: 
+  - Click any date to see first 2 goals for that day (shown below calendar)
+  - Display format: "Goal Name (Start Date - End Date)"
+  - If more than 2 goals exist, shows "... [View All X Goals]"
+  - Clicking "View All" opens a modal with complete goals list and their tasks
+- **Goals Preview Modal**: 
+  - Shows all goals active on selected date
+  - Each goal displays: Name, Date Range, and all tasks
+  - Helps admin avoid scheduling conflicts or overlaps
+- **Auto-fill**: Start/End Date fields automatically update when dates selected on calendar
+- **Read-only Fields**: Date fields cannot be manually edited, only via calendar selection
+
 **Field Purposes**:
 - **Goal Name**: Primary identifier for the goal
 - **Description**: Context and motivation for users
-- **Start Date**: When the goal becomes active
-- **End Date**: Optional deadline; if blank, goal runs indefinitely
+- **Start Date**: Auto-filled from calendar selection, when the goal becomes active
+- **End Date**: Auto-filled from calendar selection; optional (if not selected, goal runs indefinitely)
 - **Tasks**: Individual items users must complete daily
   - **Name**: What the user needs to do
   - **Notes**: Optional context (time, location, etc.)
@@ -393,12 +434,48 @@ A simple habit tracking web application where admins create goals/tasks and user
 - Tasks: At least 1 task required
 - Users: At least 1 user must be assigned
 
+**Goals Preview Modal** (When clicking "View All"):
+```
+┌─────────────────────────────────────────────────────────┐
+│ ✕ | Goals on December 15, 2025                          │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│ 1. On Time Salah (Dec 1-31, 2025)                       │
+│    Tasks: Fajr, Dhuhr, Asr, Maghrib, Isha (5 tasks)     │
+│                                                          │
+│ 2. 10 Minute Quran (Dec 10-20, 2025)                    │
+│    Tasks: 10 Min Recitation (1 task)                    │
+│                                                          │
+│ 3. English Practice (Dec 5-30, 2025)                    │
+│    Tasks: Speaking, Listening (2 tasks)                 │
+│                                                          │
+│ 4. Gym Workout (Dec 1-31, 2025)                         │
+│    Tasks: Cardio, Strength, Stretching (3 tasks)        │
+│                                                          │
+│ 5. Morning Routine (Dec 1-31, 2025)                     │
+│    Tasks: Wake up early, Exercise (2 tasks)             │
+│                                                          │
+│                          [Close]                         │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
 **Flow**:
-1. Admin fills form
-2. Admin clicks "Add Another Task" to add more tasks (up to 10)
-3. Admin clicks "Remove" to delete a task
-4. Admin selects users to assign
-5. Admin clicks "Save & Assign Goal"
+1. Admin lands on page, calendar shows current month
+2. Admin can navigate to previous/next months using arrow buttons
+3. Admin can click any date to view first 2 goals for that day (shown below calendar)
+4. If more than 2 goals exist, admin can click "View All" to open modal with complete list
+5. Modal shows all goals and their tasks for the selected date
+6. Admin closes modal and proceeds with date selection
+7. Admin clicks a date on calendar to select start date
+8. Admin clicks another date to select end date
+9. Start Date and End Date fields auto-populate (read-only)
+10. Admin can reselect dates on calendar to change range
+11. Admin fills Goal Name and Description
+12. Admin clicks "Add Another Task" to add more tasks (no limit)
+13. Admin clicks "Remove" to delete a task
+14. Admin selects users to assign
+15. Admin clicks "Save & Assign Goal"
 6. System validates all fields
 7. System creates Goal document
 8. System creates Task documents (one per task)
@@ -481,12 +558,17 @@ A simple habit tracking web application where admins create goals/tasks and user
 **Flow**:
 1. Admin clicks "Edit" on Goals List page
 2. System fetches Goal, Tasks, and GoalAssignments
-3. Form is pre-populated
-4. Admin makes changes
-5. Admin clicks "Save & Assign Goal"
-6. System updates Goal, Tasks, and GoalAssignments
-7. Admin is redirected to Goals List page
-8. Success message: "Goal updated successfully!"
+3. Form is pre-populated including calendar showing the current month
+4. Start Date and End Date fields show existing values
+5. Admin can change date range by clicking on calendar
+6. Admin can click any date to view existing goals for that day
+7. Admin makes changes to other fields
+8. Admin clicks "Save & Assign Goal"
+9. System updates Goal, Tasks, and GoalAssignments
+10. Admin is redirected to Goals List page
+11. Success message: "Goal updated successfully!"
+
+**Note**: Calendar does not highlight date ranges; admin clicks dates to select new range if needed
 
 **Note**: If admin removes a task that has existing DailyLog entries, those entries remain in the database (for historical tracking) but are no longer shown to users.
 
@@ -622,6 +704,72 @@ A simple habit tracking web application where admins create goals/tasks and user
 
 ---
 
+### 7. Settings Page
+**Route**: `/admin/settings`
+
+**UI**:
+```
+┌─────────────────────────────────────────────────────────┐
+│  Settings                                                │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  Profile Information                                     │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                          │
+│  Name:  [_____________________________] [Update Name]   │
+│                                                          │
+│  Email: [_____________________________] [Update Email]  │
+│                                                          │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                          │
+│  Change Password                                         │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                          │
+│  Current Password: [_________________________]          │
+│                                                          │
+│  New Password:     [_________________________]          │
+│                                                          │
+│  Confirm Password: [_________________________]          │
+│                                                          │
+│               [Change Password]                          │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Features**:
+- **Update Name**: Change display name (updates Firestore User document)
+- **Update Email**: Change email address (updates Firebase Auth and Firestore)
+- **Change Password**: Requires current password for security
+
+**Validation**:
+- Name: Required, max 100 chars
+- Email: Valid email format, unique
+- Current Password: Required for password change
+- New Password: Min 6 chars, must match confirm password
+
+**Flow (Update Name)**:
+1. Admin enters new name
+2. Admin clicks "Update Name"
+3. System updates User document in Firestore
+4. Success message: "Name updated successfully!"
+
+**Flow (Update Email)**:
+1. Admin enters new email
+2. Admin clicks "Update Email"
+3. System updates Firebase Auth email
+4. System updates User document in Firestore
+5. Success message: "Email updated successfully!"
+
+**Flow (Change Password)**:
+1. Admin enters current password, new password, and confirmation
+2. Admin clicks "Change Password"
+3. System validates current password
+4. System updates password in Firebase Auth
+5. Success message: "Password changed successfully!"
+6. Form clears password fields
+
+---
+
 ## User Pages & Flows
 
 ### User Navigation (Bottom Nav)
@@ -630,6 +778,8 @@ A simple habit tracking web application where admins create goals/tasks and user
 │  [🏠 Home]  [📅 Calendar]  [⚙️ Settings]   │
 └─────────────────────────────────────────────┘
 ```
+
+**Note**: Mobile-first design - navigation, forms, and all UI optimized for mobile devices first, then responsive for desktop
 
 ---
 
@@ -642,6 +792,7 @@ A simple habit tracking web application where admins create goals/tasks and user
 │ Habit Tracker                       👤 Ahmad | Logout   │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
+│ Month: [📅 December 2025 ▼]                            │
 │ Wednesday, December 18, 2025                            │
 │ < Previous Day | Today | Next Day >                     │
 │                                                          │
@@ -676,11 +827,20 @@ A simple habit tracking web application where admins create goals/tasks and user
 - "Today: Completed" = All tasks done
 - "Today: Not filled" = No entry yet
 
+**Month Selector Behavior**:
+- **Current Month (Default)**: Shows only goals where current date is between startDate and endDate
+- **Past/Future Month**: Shows all goals that have any overlap with the selected month, regardless of current date
+- Example: Goal runs 1-7 Dec 2025. On 22 Jan 2026:
+  - Dashboard (current month view): Goal NOT shown
+  - Dashboard with December 2025 selected: Goal shown
+  - Calendar view with December 2025: Goal shown
+
 **Data Source**:
 1. System fetches goals assigned to current user via GoalAssignments
-2. For each goal, fetch associated tasks
-3. For the selected date, fetch DailyLog entries for each task
-4. Calculate completion status per goal
+2. Filter goals based on selected month and current date logic
+3. For each goal, fetch associated tasks
+4. For the selected date, fetch DailyLog entries for each task
+5. Calculate completion status per goal
 
 **Flow**:
 1. User lands on this page after login
@@ -843,7 +1003,7 @@ dailyLogs.where('userId', '==', currentUserId)
 **UI**:
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ ← Back | December 2025                | Today >         │
+│ ← Prev Month | December 2025 | Next Month → | Today    │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │  Sun   Mon   Tue   Wed   Thu   Fri   Sat               │
@@ -895,8 +1055,13 @@ dailyLogs.where('userId', '==', currentUserId)
   - 🔴 Red: 0-39% completion (if needed)
   - ⚪ Gray: No data (not filled)
 - **Day Details**: Click any day to see breakdown by goal
-- **Navigation**: Previous/Next month buttons
-- **Current Day**: Highlighted with border
+- **Month Navigation**: 
+  - ← Prev Month button: Navigate to previous month
+  - Next Month → button: Navigate to next month
+  - Today button: Jump back to current month
+  - Can navigate to any past or future month
+- **Current Day**: Highlighted with border in current month view
+- **Goal Visibility**: Shows all goals that have any dates within the selected month
 
 **Calculation Logic**:
 ```javascript
@@ -928,6 +1093,20 @@ dailyLogs.where('userId', '==', currentUserId)
 
 ---
 
+### 4. User Settings Page
+**Route**: `/user/settings`
+
+**UI**: Same as Admin Settings page (name, email, password change)
+
+**Features**:
+- Update display name
+- Update email address
+- Change password
+
+**Flow**: Same as Admin Settings page
+
+---
+
 ## Example Scenarios (MVP)
 
 ### Scenario 1: Admin Creates "On Time Salah" Goal
@@ -935,11 +1114,13 @@ dailyLogs.where('userId', '==', currentUserId)
 **Step-by-Step**:
 1. Admin logs in → lands on `/admin/goals`
 2. Admin clicks "Create New Goal"
-3. Admin fills form:
+3. **Calendar appears at top showing December 2025**
+4. Admin clicks December 1 to set start date
+5. Admin clicks December 31 to set end date
+6. Start Date and End Date fields auto-populate with selected dates
+7. Admin fills remaining form:
    - **Goal Name**: "On Time Salah"
    - **Description**: "Complete all 5 daily prayers on time"
-   - **Start Date**: 2025-12-01
-   - **End Date**: 2025-12-31
    - **Tasks**:
      - Task 1: Name = "Fajr", Notes = "5:30 AM"
      - Task 2: Name = "Dhuhr", Notes = "1:00 PM"
@@ -947,12 +1128,12 @@ dailyLogs.where('userId', '==', currentUserId)
      - Task 4: Name = "Maghrib", Notes = "6:45 PM"
      - Task 5: Name = "Isha", Notes = "8:30 PM"
    - **Assign to Users**: Selects Ahmad, Fatima, Ibrahim
-4. Admin clicks "Save & Assign Goal"
-5. System creates:
+8. Admin clicks "Save & Assign Goal"
+9. System creates:
    - 1 Goal document
    - 5 Task documents
    - 3 GoalAssignment documents
-6. Admin sees success message and is redirected to Goals List
+10. Admin sees success message and is redirected to Goals List
 
 **Result**:
 - Goal "On Time Salah" appears in Goals List
@@ -1129,26 +1310,42 @@ Render Calendar Grid
    - A goal must be assigned to at least one user
    - A user can have multiple goals assigned
    - A goal can be assigned to all users via "Select All"
+   - Assignments can be edited anytime (add/remove users)
+   - Composite key (goalId, userId) ensures one assignment per user per goal
 
 2. **Task Completion**:
    - All tasks are Yes/No (boolean)
    - A task can only be filled once per date per user
-   - Users can backfill past dates but not future dates
+   - Users can backfill ANY past date (no limit)
+   - Users cannot fill future dates
+   - No limit on number of tasks per goal
 
 3. **Soft Delete**:
    - Goals, Tasks, and Assignments are soft-deleted (active = false)
-   - DailyLog entries are never deleted
+   - DailyLog entries are never deleted (preserved for history)
 
-4. **Date Handling**:
+4. **Date Handling & Goal Visibility**:
    - All dates use YYYY-MM-DD format
-   - Dates are stored in user's local timezone
+   - Dates are stored in Asia/Dhaka timezone (UTC+6)
    - Start Date cannot be in the past
    - End Date must be after Start Date
+   - Users can backfill or edit entries for ANY past date (no time limit)
+   - **Dashboard (current month)**: Only shows goals where today's date is between startDate and endDate
+   - **Dashboard (past/future month selected)**: Shows all goals with any overlap in that month
+   - **Calendar view**: Shows all goals for the selected month range
+   - **Task list**: Shows all goals when month picker is used
 
 5. **Permissions**:
    - Only admins can create/edit/delete goals
    - Users can only view assigned goals
    - Users can only fill their own daily logs
+   - All users register with role='user' (default)
+   - Admins manually change roles from admin panel
+
+6. **Notifications**:
+   - Send to all active users (not filtered by goal assignments)
+   - Hourly cloud function checks scheduled notifications
+   - Timezone: Asia/Dhaka (Bangladesh)
 
 ---
 
@@ -1335,7 +1532,7 @@ admin.initializeApp();
 // Scheduled function that runs every hour to check for notifications
 exports.checkAndSendNotifications = functions.pubsub
   .schedule('0 * * * *') // Run every hour at minute 0
-  .timeZone('Asia/Karachi')
+  .timeZone('Asia/Dhaka')
   .onRun(async (context) => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -1392,7 +1589,7 @@ exports.checkAndSendNotifications = functions.pubsub
 // Alternative: Run every minute for more precise timing (higher cost)
 exports.checkAndSendNotificationsMinutely = functions.pubsub
   .schedule('* * * * *') // Run every minute
-  .timeZone('Asia/Karachi')
+  .timeZone('Asia/Dhaka')
   .onRun(async (context) => {
     // Same logic as above
   });
@@ -1400,8 +1597,9 @@ exports.checkAndSendNotificationsMinutely = functions.pubsub
 
 **Note**: 
 - The hourly function runs at the top of each hour (e.g., 9:00, 10:00, 21:00)
-- For minute-precise notifications, use the minutely version (costs more but more accurate)
+- All active users receive notifications (regardless of goal assignments)
 - Users must grant notification permission and their FCM token must be stored in their User document
+- Timezone: Asia/Dhaka (Bangladesh)
 
 ---
 
@@ -1448,17 +1646,26 @@ jobs:
 
 ## Next Steps for Implementation
 
-1. **Setup Firebase Project**:
-   - Create Firebase project
-   - Enable Firestore, Auth, Hosting
+1. **Setup Firebase Project** (Not yet created):
+   - Go to https://console.firebase.google.com/
+   - Click "Add project" and create new project
+   - Enable Firestore Database
+   - Enable Authentication (Email/Password provider)
+   - Enable Firebase Hosting
+   - Enable Cloud Functions
+   - Enable Firebase Cloud Messaging (FCM)
    - Configure security rules
    - Create composite indexes
+   - Note: First user must be manually promoted to admin via Firebase Console
 
 2. **Setup Angular Project**:
    - `ng new habit-tracker`
    - `ng add @angular/pwa`
    - `ng add @angular/fire`
-   - Configure environment files
+   - `npm install primeng primeicons`
+   - Configure PrimeNG in angular.json
+   - Configure environment files with Firebase config
+   - Setup mobile-first responsive CSS
 
 3. **Implement Authentication**:
    - Login/Register pages
@@ -1509,7 +1716,9 @@ This is a complete, production-ready specification for Habit Tracker V1 with:
 - ✅ PWA and push notification support
 - ✅ Admin-managed notification scheduling (multi-day, custom time)
 
-**Total Pages**: 8 (Auth: 2, Admin: 5, User: 3)  
+**Total Pages**: 10 (Auth: 2, Admin: 6, User: 4)  
+**UI Framework**: PrimeNG with custom CSS (mobile-first design)  
 **Total Database Collections**: 6 (User, Goal, Task, GoalAssignment, DailyLog, Notification)  
 **Estimated Development Time**: 2-3 weeks for a solo developer  
-**Zero-Cost Hosting**: Firebase Free Tier (Firestore, Auth, Hosting, Cloud Functions, FCM)
+**Zero-Cost Hosting**: Firebase Free Tier (Firestore, Auth, Hosting, Cloud Functions, FCM)  
+**First Admin Setup**: First user registers as 'user', manually promote to 'admin' via Firebase Console

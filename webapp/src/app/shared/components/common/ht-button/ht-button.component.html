@@ -1,0 +1,15 @@
+<p-button
+  [label]="label"
+  [type]="type"
+  [severity]="severity"
+  [icon]="icon"
+  [iconPos]="iconPos"
+  [disabled]="disabled || loading"
+  [loading]="loading"
+  [outlined]="outlined"
+  [rounded]="rounded"
+  [text]="text"
+  [size]="size"
+  (onClick)="handleClick($event)"
+  [styleClass]="fullWidth ? 'ht-button-full-width' : ''"
+></p-button>

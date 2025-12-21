@@ -1,0 +1,63 @@
+/* Mobile-first modal styles */
+:host ::ng-deep .ht-modal {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .ht-modal .p-dialog-header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+}
+
+:host ::ng-deep .ht-modal .p-dialog-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+:host ::ng-deep .ht-modal .p-dialog-content {
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .ht-modal .p-dialog-footer {
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  :host ::ng-deep .ht-modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+
+  :host ::ng-deep .ht-modal .p-dialog-header {
+    padding: 0.75rem 1rem;
+  }
+
+  :host ::ng-deep .ht-modal .p-dialog-content {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .ht-modal .p-dialog-footer {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+  }
+
+  :host ::ng-deep .ht-modal .p-dialog-footer button {
+    width: 100%;
+  }
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  :host ::ng-deep .ht-modal .p-dialog-title {
+    font-size: 1.25rem;
+  }
+}

@@ -1,0 +1,23 @@
+<div class="ht-card" [class.elevated]="elevated" [class.loading]="loading">
+  <div *ngIf="title || icon || showActions" class="ht-card-header">
+    <div class="ht-card-title-section">
+      <i *ngIf="icon" [class]="icon + ' ht-card-icon'"></i>
+      <div *ngIf="title || subtitle">
+        <h3 *ngIf="title" class="ht-card-title">{{ title }}</h3>
+        <p *ngIf="subtitle" class="ht-card-subtitle">{{ subtitle }}</p>
+      </div>
+    </div>
+    
+    <div *ngIf="showActions" class="ht-card-actions">
+      <ng-content select="[cardActions]"></ng-content>
+    </div>
+  </div>
+
+  <div class="ht-card-content">
+    <div *ngIf="loading" class="ht-card-loading">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Loading...</span>
+    </div>
+    <ng-content *ngIf="!loading"></ng-content>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<p-dialog
+  [(visible)]="visible"
+  [header]="header"
+  [modal]="modal"
+  [closable]="closable"
+  [draggable]="draggable"
+  [resizable]="resizable"
+  [style]="{'width': width, 'max-width': maxWidth}"
+  [position]="position"
+  (onHide)="handleClose()"
+  (onShow)="handleShow()"
+  styleClass="ht-modal"
+>
+  <ng-content></ng-content>
+  
+  <ng-template *ngIf="showFooter" pTemplate="footer">
+    <ng-content select="[modalFooter]"></ng-content>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,91 @@
+/* Mobile-first button styles */
+:host ::ng-deep .ht-button-full-width {
+  width: 100%;
+}
+
+:host ::ng-deep .p-button {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+:host ::ng-deep .p-button.p-button-sm {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+:host ::ng-deep .p-button.p-button-lg {
+  font-size: 1.125rem;
+  padding: 1rem 2rem;
+}
+
+:host ::ng-deep .p-button:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Primary button */
+:host ::ng-deep .p-button-primary {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+:host ::ng-deep .p-button-primary:enabled:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Secondary button */
+:host ::ng-deep .p-button-secondary {
+  background-color: #6b7280;
+  border-color: #6b7280;
+  color: white;
+}
+
+:host ::ng-deep .p-button-secondary:enabled:hover {
+  background-color: #4b5563;
+  border-color: #4b5563;
+}
+
+/* Success button */
+:host ::ng-deep .p-button-success {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+:host ::ng-deep .p-button-success:enabled:hover {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+/* Danger button */
+:host ::ng-deep .p-button-danger {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+:host ::ng-deep .p-button-danger:enabled:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* Warning button */
+:host ::ng-deep .p-button-warning {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+}
+
+:host ::ng-deep .p-button-warning:enabled:hover {
+  background-color: #d97706;
+  border-color: #d97706;
+}
+
+@media (min-width: 768px) {
+  :host ::ng-deep .p-button {
+    font-size: 0.9375rem;
+  }
+}

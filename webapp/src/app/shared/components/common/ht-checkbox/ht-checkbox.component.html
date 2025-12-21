@@ -1,0 +1,15 @@
+<div class="ht-checkbox-wrapper">
+  <p-checkbox
+    [(ngModel)]="value"
+    (ngModelChange)="onValueChange($event)"
+    [binary]="binary"
+    [disabled]="disabled"
+    [label]="label"
+    [class.error]="errorMessage"
+    styleClass="ht-checkbox"
+  ></p-checkbox>
+
+  <small *ngIf="errorMessage" class="ht-checkbox-error">
+    {{ errorMessage }}
+  </small>
+</div>

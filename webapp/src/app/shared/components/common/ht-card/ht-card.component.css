@@ -1,0 +1,91 @@
+/* Mobile-first card styles */
+.ht-card {
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.ht-card.elevated {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ht-card.elevated:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ht-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 1rem;
+}
+
+.ht-card-title-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.ht-card-icon {
+  font-size: 1.5rem;
+  color: #3b82f6;
+}
+
+.ht-card-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ht-card-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.ht-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ht-card-content {
+  padding: 1rem;
+}
+
+.ht-card-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+  color: #6b7280;
+}
+
+.ht-card-loading i {
+  font-size: 2rem;
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .ht-card-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .ht-card-content {
+    padding: 1.5rem;
+  }
+
+  .ht-card-title {
+    font-size: 1.25rem;
+  }
+}

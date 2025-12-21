@@ -1,0 +1,28 @@
+<div class="ht-dropdown-wrapper">
+  <label *ngIf="label" class="ht-dropdown-label" [class.required]="required">
+    {{ label }}
+  </label>
+  
+  <p-dropdown
+    [(ngModel)]="value"
+    (ngModelChange)="onValueChange($event)"
+    [options]="options"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [showClear]="showClear"
+    [filter]="filter"
+    [filterPlaceholder]="filterPlaceholder"
+    optionLabel="label"
+    optionValue="value"
+    [class.error]="errorMessage"
+    styleClass="ht-dropdown-field"
+  ></p-dropdown>
+
+  <small *ngIf="helperText && !errorMessage" class="ht-dropdown-helper">
+    {{ helperText }}
+  </small>
+  
+  <small *ngIf="errorMessage" class="ht-dropdown-error">
+    {{ errorMessage }}
+  </small>
+</div>
