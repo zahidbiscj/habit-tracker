@@ -39,9 +39,9 @@
       </div>
 
       <!-- Tasks Section -->
-      <div class="tasks-section">
-        <div class="section-header">
-          <h3>Tasks</h3>
+      <div class="tasks-section card">
+        <div class="card-header">
+          <h3 class="card-title">Tasks</h3>
           <ht-button
             [label]="'Add Task'"
             [icon]="'pi pi-plus'"
@@ -51,47 +51,53 @@
           </ht-button>
         </div>
 
-        <div class="tasks-list">
-          <div class="task-item" *ngFor="let task of tasks; let i = index">
-            <div class="task-number">{{ i + 1 }}</div>
-            <div class="task-fields">
-              <ht-input
-                [(ngModel)]="task.name"
-                [placeholder]="'Task name'"
-                [required]="true"
-                [disabled]="loading">
-              </ht-input>
-              <ht-textarea
-                [(ngModel)]="task.additionalNotes"
-                [placeholder]="'Additional notes (optional)'"
-                [rows]="2"
-                [disabled]="loading">
-              </ht-textarea>
+        <div class="card-body">
+          <div class="tasks-list">
+            <div class="task-item" *ngFor="let task of tasks; let i = index">
+              <div class="task-number">{{ i + 1 }}</div>
+              <div class="task-fields">
+                <ht-input
+                  [(ngModel)]="task.name"
+                  [placeholder]="'Task name'"
+                  [required]="true"
+                  [disabled]="loading">
+                </ht-input>
+                <ht-textarea
+                  [(ngModel)]="task.additionalNotes"
+                  [placeholder]="'Additional notes (optional)'"
+                  [rows]="2"
+                  [disabled]="loading">
+                </ht-textarea>
+              </div>
+              <ht-button
+                [icon]="'pi pi-trash'"
+                [severity]="'danger'"
+                [size]="'small'"
+                [text]="true"
+                (onClick)="removeTask(i)">
+              </ht-button>
             </div>
-            <ht-button
-              [icon]="'pi pi-trash'"
-              [severity]="'danger'"
-              [size]="'small'"
-              [text]="true"
-              (onClick)="removeTask(i)">
-            </ht-button>
           </div>
         </div>
       </div>
 
       <!-- User Assignment -->
-      <div class="assignment-section">
-        <h3>Assign to Users</h3>
-        <div class="user-checkboxes">
-          <div class="user-checkbox" *ngFor="let user of users">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox"
-                [checked]="isUserSelected(user.id)"
-                (change)="toggleUserSelection(user.id)"
-                [disabled]="loading">
-              <span>{{ user.name }} ({{ user.email }})</span>
-            </label>
+      <div class="assignment-section card">
+        <div class="card-header">
+          <h3 class="card-title">Assign to Users</h3>
+        </div>
+        <div class="card-body">
+          <div class="user-checkboxes">
+            <div class="user-checkbox" *ngFor="let user of users">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox"
+                  [checked]="isUserSelected(user.id)"
+                  (change)="toggleUserSelection(user.id)"
+                  [disabled]="loading">
+                <span>{{ user.name }} ({{ user.email }})</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>

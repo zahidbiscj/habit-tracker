@@ -14,7 +14,7 @@
   </div>
 
   <div class="notifications-list" *ngIf="!loading">
-    <div class="notification-card" *ngFor="let notification of notifications">
+    <div class="notification-card card" *ngFor="let notification of notifications">
       <div class="notification-header">
         <span class="notification-icon">🔔</span>
         <h3>{{ notification.title }}</h3>

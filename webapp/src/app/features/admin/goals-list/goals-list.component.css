@@ -1,20 +1,16 @@
 .goals-list-container {
-  padding: 1rem;
+  padding: 0;
 }
 
 .table-container {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
 }
 
 /* Mobile First - Already optimized */
 @media (min-width: 768px) {
-  .goals-list-container {
-    padding: 1.5rem;
-  }
+  .goals-list-container { padding: 0; }
 }
 
 @media (min-width: 1024px) {
-  .goals-list-container {
-    padding: 2rem;
-  }
+  .goals-list-container { padding: 0; }
 }
