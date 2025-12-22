@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies (webapp)
         working-directory: webapp
-        run: npm install
+        run: npm ci
 
       - name: Build Angular app
         working-directory: webapp
@@ -30,7 +30,7 @@ jobs:
 
       - name: Install dependencies (functions)
         working-directory: functions
-        run: npm install
+        run: npm ci
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
