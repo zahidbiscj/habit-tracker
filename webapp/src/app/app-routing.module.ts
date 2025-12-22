@@ -33,14 +33,15 @@ const routes: Routes = [
     path: 'admin',
     canActivate: [authGuard, adminGuard],
     children: [
-      { path: '', redirectTo: 'goals', pathMatch: 'full' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: UserDashboardComponent },
+      { path: 'calendar', component: CalendarComponent },
       { path: 'goals', component: GoalsListComponent },
       { path: 'goals/create', component: GoalFormComponent },
       { path: 'goals/edit/:id', component: GoalFormComponent },
       { path: 'notifications', component: NotificationsListComponent },
       { path: 'notifications/create', component: NotificationFormComponent },
       { path: 'notifications/edit/:id', component: NotificationFormComponent },
-      { path: 'calendar', component: CalendarComponent },
       // { path: 'settings', component: SettingsComponent }
     ]
   },

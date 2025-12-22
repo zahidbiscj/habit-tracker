@@ -1,63 +1,103 @@
-<div class="app-container">
-  <!-- Navigation (only shown when logged in) -->
-  <nav class="app-nav" *ngIf="showNavigation && currentUser">
-    <div class="nav-header">
-      <h1 class="nav-title">Habit Tracker</h1>
-      <button class="nav-toggle" (click)="showMobileMenu = !showMobileMenu">
-        <i class="pi pi-bars"></i>
+<div class="app-container" *ngIf="showNavigation && currentUser">
+  <!-- Modern Sidebar -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">📊</div>
+        <span class="logo-text" *ngIf="!sidebarCollapsed">Habit Tracker</span>
+      </div>
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        <i class="pi" [ngClass]="sidebarCollapsed ? 'pi-chevron-right' : 'pi-chevron-left'"></i>
       </button>
     </div>
 
-    <div class="nav-menu" [class.show-mobile]="showMobileMenu">
-      <!-- Admin Navigation -->
-      <div class="nav-section" *ngIf="isAdmin">
-        <h3 class="nav-section-title">Admin</h3>
-        <button class="nav-item" (click)="navigateTo('/admin/goals')">
-          <i class="pi pi-list"></i>
-          <span>Goals</span>
-        </button>
-        <button class="nav-item" (click)="navigateTo('/admin/notifications')">
-          <i class="pi pi-bell"></i>
-          <span>Notifications</span>
-        </button>
-        <button class="nav-item" (click)="navigateTo('/admin/settings')">
-          <i class="pi pi-cog"></i>
-          <span>Settings</span>
-        </button>
-      </div>
-
-      <!-- User Navigation -->
-      <div class="nav-section">
-        <h3 class="nav-section-title">My Habits</h3>
-        <button class="nav-item" (click)="navigateTo('/user/dashboard')">
+    <nav class="sidebar-nav">
+      <!-- Admin: Overview Section -->
+      <div class="nav-group" *ngIf="isAdmin">
+        <div class="nav-group-label" *ngIf="!sidebarCollapsed">Overview</div>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/admin/dashboard')"
+          (click)="navigateTo('/admin/dashboard')"
+          [title]="sidebarCollapsed ? 'Dashboard' : ''">
           <i class="pi pi-home"></i>
-          <span>Dashboard</span>
+          <span *ngIf="!sidebarCollapsed">Dashboard</span>
         </button>
-        <button *ngIf="!isAdmin" class="nav-item" (click)="navigateTo('/user/settings')">
-          <i class="pi pi-cog"></i>
-          <span>Settings</span>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/admin/calendar')"
+          (click)="navigateTo('/admin/calendar')"
+          [title]="sidebarCollapsed ? 'Calendar' : ''">
+          <i class="pi pi-calendar"></i>
+          <span *ngIf="!sidebarCollapsed">Calendar</span>
         </button>
       </div>
 
-      <!-- User Info & Logout -->
-      <div class="nav-footer">
-        <div class="user-info">
-          <i class="pi pi-user"></i>
-          <div class="user-details">
-            <div class="user-name">{{ currentUser?.name }}</div>
-            <div class="user-role">{{ isAdmin ? 'Admin' : 'User' }}</div>
-          </div>
-        </div>
-        <button class="logout-button" (click)="logout()">
-          <i class="pi pi-sign-out"></i>
-          <span>Logout</span>
+      <!-- Admin: Management Section -->
+      <div class="nav-group" *ngIf="isAdmin">
+        <div class="nav-group-label" *ngIf="!sidebarCollapsed">Management</div>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/admin/goals')"
+          (click)="navigateTo('/admin/goals')"
+          [title]="sidebarCollapsed ? 'Goals' : ''">
+          <i class="pi pi-list"></i>
+          <span *ngIf="!sidebarCollapsed">Goals</span>
+        </button>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/admin/notifications')"
+          (click)="navigateTo('/admin/notifications')"
+          [title]="sidebarCollapsed ? 'Notifications' : ''">
+          <i class="pi pi-bell"></i>
+          <span *ngIf="!sidebarCollapsed">Notifications</span>
         </button>
       </div>
+
+      <!-- User: My Habits Section -->
+      <div class="nav-group" *ngIf="!isAdmin">
+        <div class="nav-group-label" *ngIf="!sidebarCollapsed">My Habits</div>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/user/dashboard')"
+          (click)="navigateTo('/user/dashboard')"
+          [title]="sidebarCollapsed ? 'Dashboard' : ''">
+          <i class="pi pi-home"></i>
+          <span *ngIf="!sidebarCollapsed">Dashboard</span>
+        </button>
+        <button 
+          class="nav-link" 
+          [class.active]="router.url.includes('/user/calendar')"
+          (click)="navigateTo('/user/calendar')"
+          [title]="sidebarCollapsed ? 'Calendar' : ''">
+          <i class="pi pi-calendar"></i>
+          <span *ngIf="!sidebarCollapsed">Calendar</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="user-avatar">{{ getUserInitials() }}</div>
+        <div class="user-info" *ngIf="!sidebarCollapsed">
+          <div class="user-name">{{ currentUser?.name }}</div>
+          <div class="user-role">{{ isAdmin ? 'Admin' : 'User' }}</div>
+        </div>
+      </div>
+      <button class="logout-btn" (click)="logout()" [title]="sidebarCollapsed ? 'Logout' : ''">
+        <i class="pi pi-sign-out"></i>
+        <span *ngIf="!sidebarCollapsed">Logout</span>
+      </button>
     </div>
-  </nav>
+  </aside>
 
   <!-- Main Content -->
-  <main class="app-main" [class.with-nav]="showNavigation && currentUser">
+  <main class="main-content">
     <router-outlet></router-outlet>
   </main>
+</div>
+
+<!-- Auth Pages (No Sidebar) -->
+<div class="auth-container" *ngIf="!showNavigation || !currentUser">
+  <router-outlet></router-outlet>
 </div>

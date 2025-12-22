@@ -15,10 +15,11 @@ export class AppComponent implements OnInit {
   currentUser: User | null = null;
   showNavigation: boolean = false;
   isAdmin: boolean = false;
+  sidebarCollapsed: boolean = false;
 
   constructor(
     private authService: AuthFirebaseService,
-    private router: Router,
+    public router: Router,
     private notificationScheduler: NotificationSchedulerService
   ) {}
 
@@ -62,5 +63,18 @@ export class AppComponent implements OnInit {
 
   navigateTo(path: string): void {
     this.router.navigate([path]);
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  getUserInitials(): string {
+    if (!this.currentUser?.name) return '?';
+    const names = this.currentUser.name.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return this.currentUser.name.substring(0, 2).toUpperCase();
   }
 }
