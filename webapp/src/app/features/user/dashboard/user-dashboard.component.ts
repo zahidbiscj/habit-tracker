@@ -108,7 +108,8 @@ export class UserDashboardComponent implements OnInit {
                     goal: result.goal,
                     tasks: result.tasks,
                     completionPercentage: percentage,
-                    completedToday
+                    completedToday,
+                    completedCount: completedCount
                   };
                 });
                 

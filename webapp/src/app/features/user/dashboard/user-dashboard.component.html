@@ -1,112 +1,81 @@
 <div class="dashboard-container">
-  <ht-card 
-    [title]="'My Dashboard'" 
-    [subtitle]="'Track your daily habits'">
-    <div class="dashboard-content">
-      <!-- Month Selector -->
-      <div class="month-selector">
-        <label>Select Month:</label>
-        <div class="month-controls">
-          <select [(ngModel)]="selectedMonth" (change)="onMonthChange()" class="month-dropdown">
-            <option *ngFor="let month of months; let i = index" [value]="i">
-              {{ month }}
-            </option>
-          </select>
-          <input type="number" [(ngModel)]="selectedYear" (change)="onMonthChange()" 
-                 class="year-input" min="2020" max="2030">
-        </div>
-      </div>
-
-      <!-- Date Navigation -->
-      <div class="date-navigation">
-        <ht-button
-          [icon]="'pi pi-chevron-left'"
-          [text]="true"
-          (onClick)="goToPreviousDay()">
-        </ht-button>
-
-        <div class="current-date">
-          <h2>{{ formatDate(selectedDate) }}</h2>
-          <span class="today-badge" *ngIf="isToday(selectedDate)">Today</span>
-        </div>
-
-        <ht-button
-          [icon]="'pi pi-chevron-right'"
-          [text]="true"
-          (onClick)="goToNextDay()">
-        </ht-button>
-      </div>
-
-      <div class="today-button-container">
-        <ht-button
-          [label]="'Go to Today'"
-          [severity]="'secondary'"
-          [outlined]="true"
-          [size]="'small'"
-          (onClick)="goToToday()">
-        </ht-button>
-      </div>
-
-      <!-- Goals Grid -->
-      <div class="goals-grid" *ngIf="!loading && goalsWithTasks.length > 0">
-        <div class="goal-badge" *ngFor="let goalData of goalsWithTasks"
-             [style.border-color]="getCompletionColor(goalData.completionPercentage)">
-          <div class="goal-header">
-            <h3>{{ goalData.goal.name }}</h3>
-            <div class="completion-badge"
-                 [style.background-color]="getCompletionColor(goalData.completionPercentage)">
-              {{ goalData.completionPercentage }}%
+    <ht-card [title]="'My Dashboard'" [subtitle]="'Track your daily habits'">
+        <div class="dashboard-content">
+            <!-- Date Controls: Row 1 (Month/Year) -->
+            <div class="date-row-top">
+                <label class="month-label">Select Month:</label>
+                <select [(ngModel)]="selectedMonth" (change)="onMonthChange()" class="month-dropdown">
+                    <option *ngFor="let month of months; let i = index" [value]="i">
+                        {{ month }}
+                    </option>
+                </select>
+                <input type="number" [(ngModel)]="selectedYear" (change)="onMonthChange()" class="year-input" min="2020" max="2030">
             </div>
-          </div>
-          <p class="goal-description" *ngIf="goalData.goal.description">
-            {{ goalData.goal.description }}
-          </p>
-          <div class="task-count">
-            {{ goalData.tasks.length }} task{{ goalData.tasks.length !== 1 ? 's' : '' }}
-          </div>
-          <div class="completion-status">
-            <i class="pi" 
-               [ngClass]="goalData.completedToday ? 'pi-check-circle' : 'pi-circle'"
-               [style.color]="goalData.completedToday ? '#4caf50' : '#9e9e9e'"></i>
-            <span>{{ goalData.completedToday ? 'Entry completed for today' : 'Pending' }}</span>
-          </div>
+
+            <!-- Date Controls: Row 2 (Prev/Date/Next + Today) -->
+            <div class="date-row-bottom">
+                <ht-button [icon]="'pi pi-chevron-left'" [text]="true" (onClick)="goToPreviousDay()" class="nav-btn">
+                </ht-button>
+                <div class="current-date">
+                    <h2>{{ formatDate(selectedDate) }}</h2>
+                    <span class="today-badge" *ngIf="isToday(selectedDate)">Today</span>
+                </div>
+                <ht-button [icon]="'pi pi-chevron-right'" [text]="true" (onClick)="goToNextDay()" class="nav-btn">
+                </ht-button>
+                <ht-button [label]="'Go to Today'" [severity]="'secondary'" [outlined]="true" [size]="'small'" (onClick)="goToToday()" class="goto-today-btn">
+                </ht-button>
+            </div>
+
+            <!-- Goals Grid -->
+            <div class="goals-grid" *ngIf="!loading && goalsWithTasks.length > 0">
+                <div class="goal-badge" *ngFor="let goalData of goalsWithTasks"
+                    [style.border-color]="getCompletionColor(goalData.completionPercentage)">
+                    <div class="goal-header">
+                        <h3>{{ goalData.goal.name }}</h3>
+                        <div class="completion-badge"
+                            [style.background-color]="getCompletionColor(goalData.completionPercentage)">
+                            {{ goalData.completionPercentage }}%
+                        </div>
+                    </div>
+                    <p class="goal-description" *ngIf="goalData.goal.description">
+                        {{ goalData.goal.description }}
+                    </p>
+                    <div class="task-count">
+                        {{ !!goalData.completedCount ? goalData.completedCount: 0 }}/{{ goalData.tasks.length }} task{{
+                        goalData.tasks.length !== 1 ? 's' : '' }} done
+                    </div>
+                    <div class="completion-status">
+                        <i class="pi" [ngClass]="goalData.completedToday ? 'pi-check-circle' : 'pi-circle'"
+                            [style.color]="goalData.completedToday ? '#4caf50' : '#9e9e9e'"></i>
+                        <span>{{ goalData.completedToday ? 'Entry completed for today' : 'Pending' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!loading && goalsWithTasks.length === 0">
+                <i class="pi pi-inbox" style="font-size: 3rem; color: #9e9e9e;"></i>
+                <p>No goals assigned yet</p>
+                <p class="empty-subtitle">Contact your admin to get started with habit tracking</p>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" *ngIf="loading">
+                <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                <p>Loading your goals...</p>
+            </div>
+
+            <!-- Fill Entry Button -->
+            <div class="action-button" *ngIf="!loading && goalsWithTasks.length > 0">
+                <ht-button [label]="'Fill Today\'s Entry'" [icon]="'pi pi-pencil'" [severity]="'primary'"
+                    [fullWidth]="true" [size]="'large'" (onClick)="openDailyEntryModal()">
+                </ht-button>
+            </div>
         </div>
-      </div>
+    </ht-card>
 
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="!loading && goalsWithTasks.length === 0">
-        <i class="pi pi-inbox" style="font-size: 3rem; color: #9e9e9e;"></i>
-        <p>No goals assigned yet</p>
-        <p class="empty-subtitle">Contact your admin to get started with habit tracking</p>
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading-state" *ngIf="loading">
-        <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
-        <p>Loading your goals...</p>
-      </div>
-
-      <!-- Fill Entry Button -->
-      <div class="action-button" *ngIf="!loading && goalsWithTasks.length > 0">
-        <ht-button
-          [label]="'Fill Today\'s Entry'"
-          [icon]="'pi pi-pencil'"
-          [severity]="'primary'"
-          [fullWidth]="true"
-          [size]="'large'"
-          (onClick)="openDailyEntryModal()">
-        </ht-button>
-      </div>
-    </div>
-  </ht-card>
-
-  <!-- Daily Entry Modal (placeholder - will be implemented) -->
-  <app-daily-entry-modal
-    *ngIf="showDailyEntryModal"
-    [visible]="showDailyEntryModal"
-    [selectedDate]="selectedDate"
-    [goalsWithTasks]="goalsWithTasks"
-    (onClose)="showDailyEntryModal = false"
-    (onSave)="onDailyEntrySaved()">
-  </app-daily-entry-modal>
+    <!-- Daily Entry Modal (placeholder - will be implemented) -->
+    <app-daily-entry-modal *ngIf="showDailyEntryModal" [visible]="showDailyEntryModal" [selectedDate]="selectedDate"
+        [goalsWithTasks]="goalsWithTasks" (onClose)="showDailyEntryModal = false" (onSave)="onDailyEntrySaved()">
+    </app-daily-entry-modal>
 </div>
