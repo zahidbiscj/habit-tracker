@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NotificationSchedulerService } from '../../../core/services/notification-scheduler.service';
 import { BrowserNotificationService } from '../../../core/services/browser-notification.service';
 
@@ -7,8 +7,9 @@ import { BrowserNotificationService } from '../../../core/services/browser-notif
   templateUrl: './test-notification.component.html',
   styleUrls: ['./test-notification.component.css']
 })
-export class TestNotificationComponent implements OnInit {
-  permissionStatus: string = '';
+export class TestNotificationComponent implements OnInit, OnDestroy {
+  schedulerStatus: any = null;
+  private statusInterval: any;
 
   constructor(
     private notificationScheduler: NotificationSchedulerService,
@@ -16,7 +17,22 @@ export class TestNotificationComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.permissionStatus = this.browserNotification.getPermission();
+    this.updateStatus();
+    
+    // Update status every second
+    this.statusInterval = setInterval(() => {
+      this.updateStatus();
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+    }
+  }
+
+  updateStatus(): void {
+    this.schedulerStatus = this.notificationScheduler.getSchedulerStatus();
   }
 
   testNotification(): void {
@@ -24,7 +40,16 @@ export class TestNotificationComponent implements OnInit {
     
     // Update permission status after requesting
     setTimeout(() => {
-      this.permissionStatus = this.browserNotification.getPermission();
+      this.updateStatus();
     }, 500);
+  }
+
+  scheduleTestForNextMinute(): void {
+    if (this.schedulerStatus.permission !== 'granted') {
+      alert('Please enable notifications first by clicking "Test Instant Notification"');
+      return;
+    }
+    
+    this.notificationScheduler.scheduleTestForNextMinute();
   }
 }

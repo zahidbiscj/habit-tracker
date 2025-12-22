@@ -4,58 +4,137 @@
   border-radius: 8px;
   padding: 20px;
   margin: 20px 0;
-  text-align: center;
 }
 
 h3 {
   color: #667eea;
   margin-bottom: 15px;
+  text-align: center;
 }
 
-.info-text {
-  color: #666;
-  margin-bottom: 10px;
+.status-panel {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
 }
 
-ul {
-  text-align: left;
-  display: inline-block;
-  margin: 10px auto;
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.status-row:last-child {
+  border-bottom: none;
+}
+
+.status-label {
+  font-weight: 500;
   color: #555;
 }
 
-.btn-test {
+.status-success {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.status-info {
+  color: #667eea;
+  font-weight: 500;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-test,
+.btn-test-schedule {
   background: #667eea;
   color: white;
-  padding: 12px 30px;
+  padding: 12px 24px;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
-  margin-top: 15px;
   transition: background 0.3s ease;
+  flex: 1;
+  min-width: 200px;
+}
+
+.btn-test-schedule {
+  background: #27ae60;
 }
 
 .btn-test:hover {
   background: #5568d3;
 }
 
-.status-info {
-  margin-top: 20px;
+.btn-test-schedule:hover {
+  background: #229954;
+}
+
+.info-box {
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
   padding: 15px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  margin: 15px 0;
+  border-radius: 4px;
+}
+
+.info-box p {
+  margin: 0 0 10px 0;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.info-box ol {
+  margin: 10px 0 0 20px;
+  color: #555;
+  line-height: 1.6;
 }
 
 .help-text {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 4px;
+}
+
+.error-text {
   color: #e67e22;
-  font-size: 14px;
-  line-height: 1.6;
+  font-weight: 500;
+  margin: 0 0 10px 0;
+}
+
+.help-text ul {
+  margin: 10px 0 10px 20px;
+  color: #555;
+  line-height: 1.8;
+}
+
+.btn-retry {
+  background: #e67e22;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
   margin-top: 10px;
 }
 
-.success-text {
-  color: #27ae60;
-  font-weight: 500;
+.btn-retry:hover {
+  background: #d35400;
 }

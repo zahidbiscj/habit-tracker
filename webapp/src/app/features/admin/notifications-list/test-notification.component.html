@@ -1,26 +1,62 @@
 <div class="test-notification-container">
   <h3>🔔 Test Browser Notifications</h3>
-  <p class="info-text">
-    Test if device notifications are working. Click the button below to:
-  </p>
-  <ul>
-    <li>Request notification permission (if not granted)</li>
-    <li>Show a test notification on your device</li>
-  </ul>
   
-  <button class="btn-test" (click)="testNotification()">
-    🔔 Test Notification
-  </button>
+  <!-- Scheduler Status -->
+  <div class="status-panel" *ngIf="schedulerStatus">
+    <div class="status-row">
+      <span class="status-label">Scheduler Status:</span>
+      <span [class]="schedulerStatus.isRunning ? 'status-success' : 'status-error'">
+        {{ schedulerStatus.isRunning ? '✅ Running' : '❌ Stopped' }}
+      </span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Permission:</span>
+      <span [class]="schedulerStatus.permission === 'granted' ? 'status-success' : 'status-error'">
+        {{ schedulerStatus.permission }}
+      </span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Current Time:</span>
+      <span class="status-info">{{ schedulerStatus.currentTime }}</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Current Day:</span>
+      <span class="status-info">{{ schedulerStatus.currentDay }} ({{ schedulerStatus.currentDayNumber }})</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Notifications Today:</span>
+      <span class="status-info">{{ schedulerStatus.notifiedCount }}</span>
+    </div>
+  </div>
   
-  <div class="status-info" *ngIf="permissionStatus">
-    <p><strong>Permission Status:</strong> {{ permissionStatus }}</p>
-    <p class="help-text" *ngIf="permissionStatus === 'denied'">
-      ⚠️ Notifications are blocked. Please enable them in your browser settings:
-      <br>Chrome/Edge: Click the 🔒 lock icon in address bar → Site settings → Notifications → Allow
-      <br>Firefox: Click the ⓘ icon in address bar → Permissions → Notifications → Allow
+  <div class="button-group">
+    <button class="btn-test" (click)="testNotification()">
+      🔔 Test Instant Notification
+    </button>
+    
+    <button class="btn-test-schedule" (click)="scheduleTestForNextMinute()">
+      ⏰ Schedule Test for Next Minute
+    </button>
+  </div>
+  
+  <div class="info-box">
+    <p><strong>How Scheduling Works:</strong></p>
+    <ol>
+      <li>Set notification time in <strong>HH:mm</strong> format (e.g., 14:30 for 2:30 PM)</li>
+      <li>Select which days of the week (0=Sunday, 1=Monday, etc.)</li>
+      <li>Notification triggers when current time matches exactly</li>
+      <li>Check console logs (F12) to see matching details</li>
+    </ol>
+  </div>
+  
+  <div class="help-text" *ngIf="schedulerStatus?.permission === 'denied'">
+    <p class="error-text">
+      ⚠️ <strong>Notifications are BLOCKED!</strong> Enable them:
     </p>
-    <p class="success-text" *ngIf="permissionStatus === 'granted'">
-      ✅ Notifications are enabled! You'll receive alerts when scheduled.
-    </p>
+    <ul>
+      <li><strong>Chrome/Edge:</strong> Click 🔒 in address bar → Site settings → Notifications → Allow</li>
+      <li><strong>Firefox:</strong> Click ⓘ in address bar → Permissions → Notifications → Allow</li>
+    </ul>
+    <button class="btn-retry" (click)="testNotification()">Retry Permission Request</button>
   </div>
 </div>

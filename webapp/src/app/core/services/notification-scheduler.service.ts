@@ -56,18 +56,33 @@ export class NotificationSchedulerService {
     const currentDay = now.getDay(); // 0=Sunday, 1=Monday, etc.
     const currentTime = this.formatTime(now);
 
-    console.log(`Checking notifications at ${currentTime} (Day: ${currentDay})`);
+    console.log(`🔍 Checking notifications at ${currentTime} (Day: ${currentDay} = ${this.getDayName(currentDay)})`);
 
     this.notificationService.getActiveNotifications().subscribe({
       next: (notifications) => {
+        console.log(`📋 Found ${notifications.length} active notifications`);
+        
         notifications.forEach(notification => {
-          if (this.shouldTrigger(notification, currentDay, currentTime)) {
+          const shouldTrigger = this.shouldTrigger(notification, currentDay, currentTime);
+          console.log(`📌 "${notification.title}":`, {
+            scheduledTime: notification.time,
+            currentTime: currentTime,
+            scheduledDays: notification.daysOfWeek.map(d => this.getDayName(d)),
+            currentDay: this.getDayName(currentDay),
+            timeMatch: notification.time === currentTime,
+            dayMatch: notification.daysOfWeek.includes(currentDay),
+            alreadyNotified: this.notifiedToday.has(`${notification.id}-${currentTime}`),
+            willTrigger: shouldTrigger
+          });
+          
+          if (shouldTrigger) {
+            console.log(`🔔 TRIGGERING: ${notification.title}`);
             this.triggerNotification(notification);
           }
         });
       },
       error: (error) => {
-        console.error('Error checking notifications:', error);
+        console.error('❌ Error checking notifications:', error);
       }
     });
   }
@@ -127,6 +142,69 @@ export class NotificationSchedulerService {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+  }
+
+  /**
+   * Get day name for logging
+   */
+  private getDayName(dayNumber: number): string {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayNumber];
+  }
+
+  /**
+   * Get scheduler status info
+   */
+  getSchedulerStatus(): any {
+    const now = new Date();
+    return {
+      isRunning: !!this.checkInterval,
+      permission: this.browserNotification.getPermission(),
+      currentTime: this.formatTime(now),
+      currentDay: this.getDayName(now.getDay()),
+      currentDayNumber: now.getDay(),
+      notifiedCount: this.notifiedToday.size
+    };
+  }
+
+  /**
+   * Schedule a test notification for next minute
+   */
+  scheduleTestForNextMinute(): void {
+    const now = new Date();
+    const nextMinute = new Date(now);
+    nextMinute.setMinutes(nextMinute.getMinutes() + 1);
+    nextMinute.setSeconds(0);
+    
+    const testTime = this.formatTime(nextMinute);
+    const testDay = nextMinute.getDay();
+    
+    console.log(`🧪 Creating test notification for ${testTime} (${this.getDayName(testDay)})`);
+    
+    // Create a temporary test notification
+    const testNotification = {
+      id: 'test-' + Date.now(),
+      title: '🧪 Test Notification',
+      body: `This notification was scheduled for ${testTime}. If you see this, scheduling works!`,
+      time: testTime,
+      daysOfWeek: [testDay],
+      active: true,
+      createdDate: new Date(),
+      updatedDate: new Date(),
+      createdBy: 'test',
+      updatedBy: 'test'
+    };
+    
+    // Save it to Firebase
+    this.notificationService.createNotification(testNotification).subscribe({
+      next: () => {
+        alert(`✅ Test notification scheduled for ${testTime} (in ~1 minute).\n\nWatch your device for the notification!\n\nCurrent time: ${this.formatTime(now)}\nNotification time: ${testTime}`);
+      },
+      error: (error) => {
+        console.error('Error creating test notification:', error);
+        alert('Failed to create test notification');
+      }
+    });
   }
 
   /**
