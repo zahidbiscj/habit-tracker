@@ -19,18 +19,32 @@ export class NotificationSchedulerService {
    * Start checking for scheduled notifications every minute
    */
   startScheduler(): void {
+    // Prevent multiple schedulers
+    if (this.checkInterval) {
+      console.log('⚠️ Scheduler already running');
+      return;
+    }
+
+    console.log('🚀 Starting notification scheduler...');
+    
     // Request permission first
     this.browserNotification.requestPermission().subscribe(permission => {
       if (permission === 'granted') {
-        console.log('✓ Notification permission granted');
+        console.log('✅ Notification permission granted');
+        
+        // Check immediately on start
+        console.log('▶️ Running initial notification check...');
         this.checkNotifications();
         
         // Check every minute
         this.checkInterval = setInterval(() => {
           this.checkNotifications();
         }, 60000); // 60 seconds
+        
+        console.log('✅ Scheduler started - checking every 60 seconds');
       } else {
-        console.warn('⚠ Notification permission denied');
+        console.warn('⚠️ Notification permission denied - scheduler not started');
+        console.log('📝 To enable: Click Test Instant Notification button first');
       }
     });
 
@@ -62,9 +76,15 @@ export class NotificationSchedulerService {
       next: (notifications) => {
         console.log(`📋 Found ${notifications.length} active notifications`);
         
+        if (notifications.length === 0) {
+          console.log('ℹ️ No active notifications to check');
+          return;
+        }
+        
         notifications.forEach(notification => {
           const shouldTrigger = this.shouldTrigger(notification, currentDay, currentTime);
           console.log(`📌 "${notification.title}":`, {
+            id: notification.id,
             scheduledTime: notification.time,
             currentTime: currentTime,
             scheduledDays: notification.daysOfWeek.map(d => this.getDayName(d)),
