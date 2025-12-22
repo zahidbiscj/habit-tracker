@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { IAuthService } from './core/services/interfaces/auth.service.interface';
+import { AuthFirebaseService } from './core/services/firebase/auth-firebase.service';
 import { User } from './core/models/user.model';
 import { filter } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ export class AppComponent implements OnInit {
   isAdmin: boolean = false;
 
   constructor(
-    private authService: IAuthService,
+    private authService: AuthFirebaseService,
     private router: Router
   ) {}
 

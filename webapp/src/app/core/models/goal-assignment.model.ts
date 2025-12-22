@@ -9,6 +9,7 @@ export interface GoalAssignment {
   updatedDate: Date;
   createdBy: string;
   updatedBy: string;
+  readonly id: string;
 }
 
 export class GoalAssignmentModel implements GoalAssignment {
@@ -28,6 +29,10 @@ export class GoalAssignmentModel implements GoalAssignment {
     this.updatedDate = data.updatedDate || new Date();
     this.createdBy = data.createdBy || '';
     this.updatedBy = data.updatedBy || '';
+  }
+
+  get id(): string {
+    return `${this.goalId}_${this.userId}`;
   }
 
   static fromFirestore(data: any): GoalAssignmentModel {
@@ -52,9 +57,5 @@ export class GoalAssignmentModel implements GoalAssignment {
       createdBy: this.createdBy,
       updatedBy: this.updatedBy
     };
-  }
-
-  get id(): string {
-    return `${this.goalId}_${this.userId}`;
   }
 }

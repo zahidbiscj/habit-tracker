@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { IAuthService } from '../../../core/services/interfaces/auth.service.interface';
+import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
 
 @Component({
   selector: 'app-register',
@@ -16,7 +16,7 @@ export class RegisterComponent {
   errorMessage: string = '';
 
   constructor(
-    private authService: IAuthService,
+    private authService: AuthFirebaseService,
     private router: Router
   ) {}
 

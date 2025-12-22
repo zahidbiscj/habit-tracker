@@ -45,14 +45,14 @@ import { RegisterComponent } from './features/auth/register/register.component';
 // Admin components
 import { GoalsListComponent } from './features/admin/goals-list/goals-list.component';
 import { GoalFormComponent } from './features/admin/goal-form/goal-form.component';
-import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
-import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
+// import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
+// import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
 
 // User components
 import { UserDashboardComponent } from './features/user/dashboard/user-dashboard.component';
 
 // Shared components
-import { SettingsComponent } from './features/shared/settings/settings.component';
+// import { SettingsComponent } from './features/shared/settings/settings.component';
 
 @NgModule({
   declarations: [
@@ -63,12 +63,12 @@ import { SettingsComponent } from './features/shared/settings/settings.component
     // Admin
     GoalsListComponent,
     GoalFormComponent,
-    NotificationsListComponent,
-    NotificationFormComponent,
+    // NotificationsListComponent,
+    // NotificationFormComponent,
     // User
     UserDashboardComponent,
     // Shared
-    SettingsComponent
+    // SettingsComponent
   ],
   imports: [
     BrowserModule,
@@ -77,10 +77,6 @@ import { SettingsComponent } from './features/shared/settings/settings.component
     ReactiveFormsModule,
     AppRoutingModule,
     SharedModule,
-    // Firebase initialization
-    provideFirebaseApp(() => initializeApp(environment.firebase)),
-    provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()),
     // PWA Service Worker
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
@@ -88,15 +84,19 @@ import { SettingsComponent } from './features/shared/settings/settings.component
     })
   ],
   providers: [
+    // Firebase initialization
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
     // Provider-agnostic service bindings
     // To switch to another provider (e.g., Supabase), just change the useClass
-    { provide: IAuthService, useClass: AuthFirebaseService },
-    { provide: IUserService, useClass: UserFirebaseService },
-    { provide: IGoalService, useClass: GoalFirebaseService },
-    { provide: ITaskService, useClass: TaskFirebaseService },
-    { provide: IDailyLogService, useClass: DailyLogFirebaseService },
-    { provide: IGoalAssignmentService, useClass: GoalAssignmentFirebaseService },
-    { provide: INotificationService, useClass: NotificationFirebaseService }
+    AuthFirebaseService,
+    UserFirebaseService,
+    GoalFirebaseService,
+    TaskFirebaseService,
+    DailyLogFirebaseService,
+    GoalAssignmentFirebaseService,
+    NotificationFirebaseService
   ],
   bootstrap: [AppComponent]
 })

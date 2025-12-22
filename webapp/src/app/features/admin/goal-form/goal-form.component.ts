@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { IGoalService } from '../../../core/services/interfaces/goal.service.interface';
-import { ITaskService } from '../../../core/services/interfaces/task.service.interface';
-import { IUserService } from '../../../core/services/interfaces/user.service.interface';
-import { IGoalAssignmentService } from '../../../core/services/interfaces/goal-assignment.service.interface';
-import { IAuthService } from '../../../core/services/interfaces/auth.service.interface';
+import { GoalFirebaseService } from '../../../core/services/firebase/goal-firebase.service';
+import { TaskFirebaseService } from '../../../core/services/firebase/task-firebase.service';
+import { UserFirebaseService } from '../../../core/services/firebase/user-firebase.service';
+import { GoalAssignmentFirebaseService } from '../../../core/services/firebase/goal-assignment-firebase.service';
+import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
 import { User } from '../../../core/models/user.model';
@@ -43,11 +43,11 @@ export class GoalFormComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private goalService: IGoalService,
-    private taskService: ITaskService,
-    private userService: IUserService,
-    private goalAssignmentService: IGoalAssignmentService,
-    private authService: IAuthService
+    private goalService: GoalFirebaseService,
+    private taskService: TaskFirebaseService,
+    private userService: UserFirebaseService,
+    private goalAssignmentService: GoalAssignmentFirebaseService,
+    private authService: AuthFirebaseService
   ) {}
 
   ngOnInit(): void {
@@ -165,7 +165,8 @@ export class GoalFormComponent implements OnInit {
   }
 
   createGoal(): void {
-    const goalData = {
+    const goalData: Goal = {
+      id: this.generateId(), // Generate temporary ID
       name: this.goalName.trim(),
       description: this.goalDescription.trim(),
       startDate: this.startDate,
@@ -180,7 +181,8 @@ export class GoalFormComponent implements OnInit {
     this.goalService.createGoal(goalData).subscribe({
       next: (goal) => {
         // Create tasks
-        const tasksData = this.tasks.map((task, index) => ({
+        const tasksData: Task[] = this.tasks.map((task, index) => ({
+          id: this.generateId(), // Generate temporary ID
           goalId: goal.id,
           name: task.name.trim(),
           additionalNotes: task.additionalNotes.trim(),
@@ -233,20 +235,32 @@ export class GoalFormComponent implements OnInit {
   updateGoal(): void {
     if (!this.goalId) return;
 
-    const updates = {
-      name: this.goalName.trim(),
-      description: this.goalDescription.trim(),
-      startDate: this.startDate,
-      endDate: this.endDate,
-      updatedBy: this.currentUserId
-    };
+    // Load current goal first to get all fields
+    this.goalService.getGoalById(this.goalId).subscribe({
+      next: (currentGoal) => {
+        if (!currentGoal) {
+          alert('Goal not found');
+          this.loading = false;
+          return;
+        }
 
-    this.goalService.updateGoal(this.goalId, updates).subscribe({
-      next: () => {
-        // Update tasks - delete old ones and create new ones
-        this.taskService.deleteTasksByGoalId(this.goalId!).subscribe({
+        const updatedGoal: Goal = {
+          ...currentGoal,
+          name: this.goalName.trim(),
+          description: this.goalDescription.trim(),
+          startDate: this.startDate,
+          endDate: this.endDate,
+          updatedDate: new Date(),
+          updatedBy: this.currentUserId
+        };
+
+        this.goalService.updateGoal(updatedGoal).subscribe({
           next: () => {
-            const tasksData = this.tasks.map((task, index) => ({
+            // Update tasks - delete old ones and create new ones
+            this.taskService.deleteTasksByGoalId(this.goalId!).subscribe({
+              next: () => {
+                const tasksData: Task[] = this.tasks.map((task, index) => ({
+              id: this.generateId(), // Generate temporary ID
               goalId: this.goalId!,
               name: task.name.trim(),
               additionalNotes: task.additionalNotes.trim(),
@@ -303,16 +317,22 @@ export class GoalFormComponent implements OnInit {
             alert('Failed to update tasks');
           }
         });
-      },
-      error: (error) => {
-        console.error('Error updating goal:', error);
-        this.loading = false;
-        alert('Failed to update goal');
+          },
+          error: (error) => {
+            console.error('Error updating goal:', error);
+            this.loading = false;
+            alert('Failed to update goal');
+          }
+        });
       }
     });
   }
 
   onCancel(): void {
     this.router.navigate(['/admin/goals']);
+  }
+
+  private generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   }
 }

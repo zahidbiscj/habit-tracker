@@ -45,7 +45,7 @@ export class UserFirebaseService implements IUserService {
     );
   }
 
-  createUser(user: Omit<User, 'id'>): Observable<User> {
+  createUser(user: User): Observable<User> {
     const docRef = doc(collection(this.firestore, this.collectionName));
     const userId = docRef.id;
     const newUser = new UserModel({ ...user, id: userId });
@@ -59,9 +59,9 @@ export class UserFirebaseService implements IUserService {
     );
   }
 
-  updateUser(userId: string, updates: Partial<User>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${userId}`);
-    const updateData: any = { ...updates };
+  updateUser(user: User): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${user.id}`);
+    const updateData: any = { ...user };
     delete updateData.id;
     updateData.updatedDate = serverTimestamp();
     

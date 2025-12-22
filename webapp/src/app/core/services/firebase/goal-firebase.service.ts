@@ -77,7 +77,7 @@ export class GoalFirebaseService implements IGoalService {
     );
   }
 
-  createGoal(goal: Omit<Goal, 'id'>): Observable<Goal> {
+  createGoal(goal: Goal): Observable<Goal> {
     const docRef = doc(collection(this.firestore, this.collectionName));
     const goalId = docRef.id;
     const newGoal = new GoalModel({ ...goal, id: goalId });
@@ -91,9 +91,9 @@ export class GoalFirebaseService implements IGoalService {
     );
   }
 
-  updateGoal(goalId: string, updates: Partial<Goal>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${goalId}`);
-    const updateData: any = { ...updates };
+  updateGoal(goal: Goal): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${goal.id}`);
+    const updateData: any = { ...goal };
     delete updateData.id;
     
     // Convert dates to Timestamps

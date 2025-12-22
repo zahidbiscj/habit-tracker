@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { IAuthService } from '../../../core/services/interfaces/auth.service.interface';
-import { IGoalAssignmentService } from '../../../core/services/interfaces/goal-assignment.service.interface';
-import { IGoalService } from '../../../core/services/interfaces/goal.service.interface';
-import { ITaskService } from '../../../core/services/interfaces/task.service.interface';
-import { IDailyLogService } from '../../../core/services/interfaces/daily-log.service.interface';
+import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
+import { GoalAssignmentFirebaseService } from '../../../core/services/firebase/goal-assignment-firebase.service';
+import { GoalFirebaseService } from '../../../core/services/firebase/goal-firebase.service';
+import { TaskFirebaseService } from '../../../core/services/firebase/task-firebase.service';
+import { DailyLogFirebaseService } from '../../../core/services/firebase/daily-log-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
 import { forkJoin } from 'rxjs';
@@ -38,11 +38,11 @@ export class UserDashboardComponent implements OnInit {
   selectedYear: number = new Date().getFullYear();
 
   constructor(
-    private authService: IAuthService,
-    private goalAssignmentService: IGoalAssignmentService,
-    private goalService: IGoalService,
-    private taskService: ITaskService,
-    private dailyLogService: IDailyLogService
+    private authService: AuthFirebaseService,
+    private goalAssignmentService: GoalAssignmentFirebaseService,
+    private goalService: GoalFirebaseService,
+    private taskService: TaskFirebaseService,
+    private dailyLogService: DailyLogFirebaseService
   ) {}
 
   ngOnInit(): void {

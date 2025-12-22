@@ -6,7 +6,7 @@ export interface TableColumn {
   sortable?: boolean;
   filterable?: boolean;
   width?: string;
-  template?: TemplateRef<any>;
+  template?: TemplateRef<any> | ((row: any) => string);
 }
 
 export interface TableAction {

@@ -10,14 +10,14 @@ import { RegisterComponent } from './features/auth/register/register.component';
 // Admin components
 import { GoalsListComponent } from './features/admin/goals-list/goals-list.component';
 import { GoalFormComponent } from './features/admin/goal-form/goal-form.component';
-import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
-import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
+// import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
+// import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
 
 // User components
 import { UserDashboardComponent } from './features/user/dashboard/user-dashboard.component';
 
 // Shared components
-import { SettingsComponent } from './features/shared/settings/settings.component';
+// import { SettingsComponent } from './features/shared/settings/settings.component';
 
 const routes: Routes = [
   // Default redirect
@@ -36,10 +36,10 @@ const routes: Routes = [
       { path: 'goals', component: GoalsListComponent },
       { path: 'goals/create', component: GoalFormComponent },
       { path: 'goals/edit/:id', component: GoalFormComponent },
-      { path: 'notifications', component: NotificationsListComponent },
-      { path: 'notifications/create', component: NotificationFormComponent },
-      { path: 'notifications/edit/:id', component: NotificationFormComponent },
-      { path: 'settings', component: SettingsComponent }
+      // { path: 'notifications', component: NotificationsListComponent },
+      // { path: 'notifications/create', component: NotificationFormComponent },
+      // { path: 'notifications/edit/:id', component: NotificationFormComponent },
+      // { path: 'settings', component: SettingsComponent }
     ]
   },
 
@@ -53,7 +53,7 @@ const routes: Routes = [
       // TODO: Add calendar and daily-entry routes when components are created
       // { path: 'calendar', component: UserCalendarComponent },
       // { path: 'daily-entry', component: DailyEntryComponent },
-      { path: 'settings', component: SettingsComponent }
+      // { path: 'settings', component: SettingsComponent }
     ]
   },
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, from, map } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 import { Firestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, 
          query, where, orderBy, writeBatch, serverTimestamp, Timestamp } from '@angular/fire/firestore';
 import { IDailyLogService } from '../interfaces/daily-log.service.interface';
@@ -94,7 +94,7 @@ export class DailyLogFirebaseService implements IDailyLogService {
     );
   }
 
-  createLog(log: Omit<DailyLog, 'id'>): Observable<DailyLog> {
+  createLog(log: DailyLog): Observable<DailyLog> {
     const docRef = doc(collection(this.firestore, this.collectionName));
     const logId = docRef.id;
     const newLog = new DailyLogModel({ ...log, id: logId });
@@ -108,7 +108,7 @@ export class DailyLogFirebaseService implements IDailyLogService {
     );
   }
 
-  createLogs(logs: Omit<DailyLog, 'id'>[]): Observable<DailyLog[]> {
+  createLogs(logs: DailyLog[]): Observable<DailyLog[]> {
     const batch = writeBatch(this.firestore);
     const createdLogs: DailyLog[] = [];
     
@@ -131,9 +131,9 @@ export class DailyLogFirebaseService implements IDailyLogService {
     );
   }
 
-  updateLog(logId: string, updates: Partial<DailyLog>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${logId}`);
-    const updateData: any = { ...updates };
+  updateLog(log: DailyLog): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${log.id}`);
+    const updateData: any = { ...log };
     delete updateData.id;
     
     if (updateData.date) {
@@ -147,30 +147,21 @@ export class DailyLogFirebaseService implements IDailyLogService {
     );
   }
 
-  upsertLog(userId: string, taskId: string, date: Date, value: boolean, createdBy: string): Observable<DailyLog> {
-    return this.getLogByUserTaskDate(userId, taskId, date).pipe(
-      map(existingLog => {
+  upsertLog(log: DailyLog): Observable<DailyLog> {
+    return this.getLogByUserTaskDate(log.userId, log.taskId, log.date).pipe(
+      switchMap(existingLog => {
         if (existingLog) {
           // Update existing log
-          return from(this.updateLog(existingLog.id, { value, updatedBy: createdBy })).pipe(
-            map(() => ({ ...existingLog, value, updatedBy: createdBy, updatedDate: new Date() }))
+          const updatedLog = { ...existingLog, ...log, id: existingLog.id };
+          return this.updateLog(updatedLog).pipe(
+            map(() => updatedLog)
           );
         } else {
           // Create new log
-          return this.createLog({
-            userId,
-            taskId,
-            date,
-            value,
-            active: true,
-            createdDate: new Date(),
-            updatedDate: new Date(),
-            createdBy,
-            updatedBy: createdBy
-          });
+          return this.createLog(log);
         }
       })
-    ) as any;
+    );
   }
 
   deleteLog(logId: string): Observable<void> {
@@ -180,27 +171,18 @@ export class DailyLogFirebaseService implements IDailyLogService {
     );
   }
 
-  getCompletionStats(userId: string, startDate: Date, endDate: Date): Observable<{ date: Date; completedTasks: number; totalTasks: number; percentage: number }[]> {
+  getCompletionStats(userId: string, startDate: Date, endDate: Date): Observable<{ totalTasks: number; completedTasks: number; percentage: number }> {
     return this.getLogsByUserAndDateRange(userId, startDate, endDate).pipe(
       map(logs => {
-        const statsMap = new Map<string, { completed: number; total: number }>();
+        const totalTasks = logs.length;
+        const completedTasks = logs.filter(log => log.value).length;
+        const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         
-        logs.forEach(log => {
-          const dateKey = log.date.toISOString().split('T')[0];
-          const stats = statsMap.get(dateKey) || { completed: 0, total: 0 };
-          stats.total++;
-          if (log.value) {
-            stats.completed++;
-          }
-          statsMap.set(dateKey, stats);
-        });
-        
-        return Array.from(statsMap.entries()).map(([dateStr, stats]) => ({
-          date: new Date(dateStr),
-          completedTasks: stats.completed,
-          totalTasks: stats.total,
-          percentage: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
-        }));
+        return {
+          totalTasks,
+          completedTasks,
+          percentage
+        };
       })
     );
   }

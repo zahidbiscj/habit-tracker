@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { IGoalService } from '../../../core/services/interfaces/goal.service.interface';
-import { ITaskService } from '../../../core/services/interfaces/task.service.interface';
-import { IGoalAssignmentService } from '../../../core/services/interfaces/goal-assignment.service.interface';
+import { GoalFirebaseService } from '../../../core/services/firebase/goal-firebase.service';
+import { TaskFirebaseService } from '../../../core/services/firebase/task-firebase.service';
+import { GoalAssignmentFirebaseService } from '../../../core/services/firebase/goal-assignment-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { TableColumn, TableAction } from '../../../shared/components/common/ht-table/ht-table.component';
 
@@ -18,9 +18,9 @@ export class GoalsListComponent implements OnInit {
   actions: TableAction[] = [];
 
   constructor(
-    private goalService: IGoalService,
-    private taskService: ITaskService,
-    private goalAssignmentService: IGoalAssignmentService,
+    private goalService: GoalFirebaseService,
+    private taskService: TaskFirebaseService,
+    private goalAssignmentService: GoalAssignmentFirebaseService,
     private router: Router
   ) {
     this.setupTable();

@@ -20,7 +20,7 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     return from(getDoc(docRef)).pipe(
       map(docSnap => {
         if (docSnap.exists()) {
-          return GoalAssignmentModel.fromFirestore(docSnap.id, docSnap.data());
+          return GoalAssignmentModel.fromFirestore(docSnap.data());
         }
         return null;
       })
@@ -33,7 +33,7 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     
     return from(getDocs(q)).pipe(
       map(querySnapshot => 
-        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.id, doc.data()))
+        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.data()))
       )
     );
   }
@@ -44,7 +44,7 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     
     return from(getDocs(q)).pipe(
       map(querySnapshot => 
-        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.id, doc.data()))
+        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.data()))
       )
     );
   }
@@ -59,15 +59,15 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     
     return from(getDocs(q)).pipe(
       map(querySnapshot => 
-        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.id, doc.data()))
+        querySnapshot.docs.map(doc => GoalAssignmentModel.fromFirestore(doc.data()))
       )
     );
   }
 
-  createAssignment(assignment: Omit<GoalAssignment, 'id'>): Observable<GoalAssignment> {
+  createAssignment(assignment: GoalAssignment): Observable<GoalAssignment> {
     const docId = `${assignment.goalId}_${assignment.userId}`;
     const docRef = doc(this.firestore, `${this.collectionName}/${docId}`);
-    const newAssignment = new GoalAssignmentModel({ ...assignment, id: docId });
+    const newAssignment = new GoalAssignmentModel(assignment);
     
     return from(setDoc(docRef, {
       ...newAssignment.toFirestore(),
@@ -78,14 +78,14 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     );
   }
 
-  createAssignments(assignments: Omit<GoalAssignment, 'id'>[]): Observable<GoalAssignment[]> {
+  createAssignments(assignments: GoalAssignment[]): Observable<GoalAssignment[]> {
     const batch = writeBatch(this.firestore);
     const createdAssignments: GoalAssignment[] = [];
     
     assignments.forEach(assignment => {
       const docId = `${assignment.goalId}_${assignment.userId}`;
       const docRef = doc(this.firestore, `${this.collectionName}/${docId}`);
-      const newAssignment = new GoalAssignmentModel({ ...assignment, id: docId });
+      const newAssignment = new GoalAssignmentModel(assignment);
       
       batch.set(docRef, {
         ...newAssignment.toFirestore(),
@@ -101,10 +101,9 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     );
   }
 
-  updateAssignment(assignmentId: string, updates: Partial<GoalAssignment>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${assignmentId}`);
-    const updateData: any = { ...updates };
-    delete updateData.id;
+  updateAssignment(assignment: GoalAssignment): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${assignment.id}`);
+    const updateData: any = { ...assignment };
     delete updateData.goalId;
     delete updateData.userId;
     updateData.updatedDate = serverTimestamp();
@@ -136,18 +135,21 @@ export class GoalAssignmentFirebaseService implements IGoalAssignmentService {
     );
   }
 
-  assignGoalToUsers(goalId: string, userIds: string[], createdBy: string): Observable<GoalAssignment[]> {
-    const assignments: Omit<GoalAssignment, 'id'>[] = userIds.map(userId => ({
+  assignGoalToUsers(goalId: string, userIds: string[], createdBy: string): Observable<void> {
+    const assignments: GoalAssignment[] = userIds.map(userId => ({
       goalId,
       userId,
       active: true,
       createdDate: new Date(),
       updatedDate: new Date(),
       createdBy,
-      updatedBy: createdBy
+      updatedBy: createdBy,
+      id: `${goalId}_${userId}`
     }));
     
-    return this.createAssignments(assignments);
+    return this.createAssignments(assignments).pipe(
+      map(() => void 0)
+    );
   }
 
   unassignGoalFromUsers(goalId: string, userIds: string[]): Observable<void> {

@@ -51,7 +51,7 @@ export class NotificationFirebaseService implements INotificationService {
     );
   }
 
-  createNotification(notification: Omit<Notification, 'id'>): Observable<Notification> {
+  createNotification(notification: Notification): Observable<Notification> {
     const docRef = doc(collection(this.firestore, this.collectionName));
     const notificationId = docRef.id;
     const newNotification = new NotificationModel({ ...notification, id: notificationId });
@@ -65,9 +65,9 @@ export class NotificationFirebaseService implements INotificationService {
     );
   }
 
-  updateNotification(notificationId: string, updates: Partial<Notification>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${notificationId}`);
-    const updateData: any = { ...updates };
+  updateNotification(notification: Notification): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${notification.id}`);
+    const updateData: any = { ...notification };
     delete updateData.id;
     updateData.updatedDate = serverTimestamp();
     

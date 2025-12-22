@@ -56,7 +56,7 @@ export class TaskFirebaseService implements ITaskService {
     );
   }
 
-  createTask(task: Omit<Task, 'id'>): Observable<Task> {
+  createTask(task: Task): Observable<Task> {
     const docRef = doc(collection(this.firestore, this.collectionName));
     const taskId = docRef.id;
     const newTask = new TaskModel({ ...task, id: taskId });
@@ -70,7 +70,7 @@ export class TaskFirebaseService implements ITaskService {
     );
   }
 
-  createTasks(tasks: Omit<Task, 'id'>[]): Observable<Task[]> {
+  createTasks(tasks: Task[]): Observable<Task[]> {
     const batch = writeBatch(this.firestore);
     const createdTasks: Task[] = [];
     
@@ -93,9 +93,9 @@ export class TaskFirebaseService implements ITaskService {
     );
   }
 
-  updateTask(taskId: string, updates: Partial<Task>): Observable<void> {
-    const docRef = doc(this.firestore, `${this.collectionName}/${taskId}`);
-    const updateData: any = { ...updates };
+  updateTask(task: Task): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${task.id}`);
+    const updateData: any = { ...task };
     delete updateData.id;
     updateData.updatedDate = serverTimestamp();
     
