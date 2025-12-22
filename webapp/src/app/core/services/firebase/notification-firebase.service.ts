@@ -40,14 +40,15 @@ export class NotificationFirebaseService implements INotificationService {
     const collectionRef = collection(this.firestore, this.collectionName);
     const q = query(
       collectionRef,
-      where('active', '==', true),
-      orderBy('time', 'asc')
+      where('active', '==', true)
     );
     
     return from(getDocs(q)).pipe(
-      map(querySnapshot => 
-        querySnapshot.docs.map(doc => NotificationModel.fromFirestore(doc.id, doc.data()))
-      )
+      map(querySnapshot => {
+        const list = querySnapshot.docs.map(doc => NotificationModel.fromFirestore(doc.id, doc.data()));
+        // Sort client-side by time HH:mm to avoid composite index requirement
+        return list.sort((a, b) => a.time.localeCompare(b.time));
+      })
     );
   }
 
