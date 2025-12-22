@@ -1,5 +1,5 @@
 .goal-form-container {
-  padding: 1rem;
+  padding: 0;
   max-width: 900px;
   margin: 0 auto;
 }
@@ -129,7 +129,7 @@
 /* Mobile First - Already optimized */
 @media (min-width: 768px) {
   .goal-form-container {
-    padding: 1.5rem;
+    padding: 0;
   }
 
   .date-range {
@@ -149,7 +149,7 @@
 
 @media (min-width: 1024px) {
   .goal-form-container {
-    padding: 2rem;
+    padding: 0;
   }
 
   .user-checkboxes {
