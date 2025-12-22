@@ -140,17 +140,31 @@ export class NotificationSchedulerService {
   private triggerNotification(notification: NotificationModel): void {
     const notificationKey = `${notification.id}-${this.formatTime(new Date())}`;
     
-    this.browserNotification.show({
-      title: notification.title,
-      body: notification.body,
-      icon: '/assets/icons/icon-192x192.svg',
-      badge: '/assets/icons/icon-72x72.svg',
-      tag: notification.id,
-      requireInteraction: false
-    }).subscribe(success => {
-      if (success) {
-        console.log(`✓ Notification shown: ${notification.title}`);
-        this.notifiedToday.add(notificationKey);
+    console.log(`🔔 TRIGGERING NOTIFICATION: "${notification.title}"`);
+    
+    // Request permission first (in case it was revoked)
+    this.browserNotification.requestPermission().subscribe(permission => {
+      if (permission === 'granted') {
+        console.log('✅ Permission granted, showing notification...');
+        
+        // Use the same method as Test Instant Notification
+        this.browserNotification.show({
+          title: notification.title,
+          body: notification.body,
+          icon: '/assets/icons/icon-192x192.svg',
+          badge: '/assets/icons/icon-72x72.svg',
+          tag: notification.id,
+          requireInteraction: true // Keep it open like test notification
+        }).subscribe(success => {
+          if (success) {
+            console.log(`✅✅✅ NOTIFICATION SHOWN: ${notification.title}`);
+            this.notifiedToday.add(notificationKey);
+          } else {
+            console.error(`❌ Failed to show notification: ${notification.title}`);
+          }
+        });
+      } else {
+        console.error(`❌ Permission denied: ${permission}`);
       }
     });
   }
@@ -200,12 +214,22 @@ export class NotificationSchedulerService {
     const testDay = nextMinute.getDay();
     
     console.log(`🧪 Creating test notification for ${testTime} (${this.getDayName(testDay)})`);
+    console.log('Current scheduler status:', {
+      isRunning: !!this.checkInterval,
+      permission: this.browserNotification.getPermission(),
+      currentTime: this.formatTime(now)
+    });
+    
+    if (!this.checkInterval) {
+      alert('❌ SCHEDULER NOT RUNNING!\n\nThe scheduler is not active. Please:\n1. Refresh the page\n2. Make sure you are logged in\n3. Try again');
+      return;
+    }
     
     // Create a temporary test notification
     const testNotification = {
       id: 'test-' + Date.now(),
-      title: '🧪 Test Notification',
-      body: `This notification was scheduled for ${testTime}. If you see this, scheduling works!`,
+      title: '🧪 Test Scheduled Notification',
+      body: `This was scheduled for ${testTime}. If you see this, scheduled notifications work!`,
       time: testTime,
       daysOfWeek: [testDay],
       active: true,
@@ -218,11 +242,36 @@ export class NotificationSchedulerService {
     // Save it to Firebase
     this.notificationService.createNotification(testNotification).subscribe({
       next: () => {
-        alert(`✅ Test notification scheduled for ${testTime} (in ~1 minute).\n\nWatch your device for the notification!\n\nCurrent time: ${this.formatTime(now)}\nNotification time: ${testTime}`);
+        console.log('✅ Test notification created successfully');
+        console.log('📋 Notification details:', testNotification);
+        
+        // Force an immediate check to verify it's in the database
+        setTimeout(() => {
+          console.log('🔍 Verifying notification was saved...');
+          this.notificationService.getActiveNotifications().subscribe({
+            next: (notifications) => {
+              const found = notifications.find(n => n.id === testNotification.id);
+              if (found) {
+                console.log('✅ Notification found in database:', found);
+              } else {
+                console.error('❌ Notification NOT found in database!');
+              }
+            }
+          });
+        }, 1000);
+        
+        alert(`✅ Test notification scheduled!\n\n` +
+              `Current time: ${this.formatTime(now)}\n` +
+              `Notification time: ${testTime}\n` +
+              `Day: ${this.getDayName(testDay)}\n\n` +
+              `⏳ Wait ~1 minute...\n` +
+              `📺 Keep this tab OPEN\n` +
+              `🔍 Watch console (F12) for logs\n\n` +
+              `Scheduler checks every 60 seconds at :00`);
       },
       error: (error) => {
-        console.error('Error creating test notification:', error);
-        alert('Failed to create test notification');
+        console.error('❌ Error creating test notification:', error);
+        alert('Failed to create test notification: ' + error.message);
       }
     });
   }
