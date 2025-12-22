@@ -1,84 +1,70 @@
-<ht-modal
-  [(visible)]="visible"
-  [header]="'Daily Entry - ' + formatDate(selectedDate)"
-  [style]="{ width: '90vw', maxWidth: '800px' }"
-  (onClose)="close()">
-  
-  <div class="daily-entry-content" *ngIf="!loading">
-    <!-- Progress Summary -->
-    <div class="progress-summary">
-      <div class="progress-text">
-        <span class="completed-count">{{ getCompletedCount() }}</span>
-        <span class="separator">/</span>
-        <span class="total-count">{{getCompletedCount()}}/{{ getTotalTasks() }} </span>
-        <span class="label">tasks completed</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" 
-             [style.width.%]="(getCompletedCount() / getTotalTasks()) * 100"></div>
-      </div>
-    </div>
+<ht-modal [(visible)]="visible" [header]="'Daily Entry - ' + formatDate(selectedDate)"
+    [style]="{ width: '90vw', maxWidth: '800px' }" (onClose)="close()">
 
-    <!-- Goals and Tasks -->
-    <div class="goals-list">
-      <div class="goal-section" *ngFor="let goalData of goalsWithTasks">
-        <div class="goal-header">
-          <h3>{{ goalData.goal.name }}</h3>
-          <span class="task-count">{{ goalData.tasks.length }} tasks</span>
+    <div class="daily-entry-content" *ngIf="!loading">
+        <!-- Progress Summary -->
+        <div class="progress-summary">
+            <div class="progress-text">
+                <span class="completed-count">{{ getCompletedCount() }}</span>
+                <span class="separator">/</span>
+                <span class="total-count">{{ getTotalTasks() }} </span>
+                <span class="label">tasks completed</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="(getCompletedCount() / getTotalTasks()) * 100"></div>
+            </div>
         </div>
 
-        <div class="tasks-list">
-          <div class="task-item" *ngFor="let task of goalData.tasks">
-            <div class="task-checkbox">
-              <label class="checkbox-wrapper">
-                <input 
-                  type="checkbox"
-                  [checked]="taskLogs.get(task.id)?.value"
-                  (change)="toggleTaskCompletion(task.id)">
-                <span class="checkbox-label">
-                  {{ task.name }}
-                </span>
-              </label>
-            </div>
-            
-            <div class="task-notes" *ngIf="task.additionalNotes">
-              <small class="notes-label">Additional Info:</small>
-              <p class="additional-notes">{{ task.additionalNotes }}</p>
-            </div>
+        <!-- Goals and Tasks -->
+        <div class="goals-list">
+            <div class="goal-section" *ngFor="let goalData of goalsWithTasks">
+                <div class="goal-header">
+                    <div class="goal-header-row">
+                        <h3>{{ goalData.goal.name }}</h3>
+                        <span class="task-count">{{ goalData.tasks.length }} tasks</span>
+                    </div>
+                </div>
 
-            <div class="task-input">
-              <textarea
-                [value]="taskLogs.get(task.id)?.notes"
-                (input)="updateTaskNotes(task.id, $any($event.target).value)"
-                placeholder="Add notes (optional)"
-                rows="2"
-                class="notes-textarea"></textarea>
+                <div class="tasks-list">
+                    <div class="task-item" *ngFor="let task of goalData.tasks">
+                        <div class="task-checkbox">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" [checked]="taskLogs.get(task.id)?.value"
+                                    (change)="toggleTaskCompletion(task.id)">
+                                <span class="checkbox-label">
+                                    {{ task.name }}
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="task-notes" *ngIf="task.additionalNotes">
+                            <small class="notes-label">Additional Info:</small>
+                            <p class="additional-notes">{{ task.additionalNotes }}</p>
+                        </div>
+
+                        <div class="task-input">
+                            <textarea [value]="taskLogs.get(task.id)?.notes"
+                                (input)="updateTaskNotes(task.id, $any($event.target).value)"
+                                placeholder="Add notes (optional)" rows="2" class="notes-textarea"></textarea>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  <div class="loading-container" *ngIf="loading">
-    <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
-    <p>Loading tasks...</p>
-  </div>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+        <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+        <p>Loading tasks...</p>
+    </div>
 
-  <!-- Footer Actions -->
-  <div class="modal-footer">
-    <ht-button
-      [label]="'Cancel'"
-      [severity]="'secondary'"
-      (onClick)="close()">
-    </ht-button>
-    <ht-button
-      [label]="'Save Entry'"
-      [severity]="'primary'"
-      [loading]="saving"
-      [disabled]="loading"
-      (onClick)="saveLogs()">
-    </ht-button>
-  </div>
+    <!-- Footer Actions -->
+    <div class="modal-footer">
+        <ht-button [label]="'Cancel'" [severity]="'secondary'" (onClick)="close()">
+        </ht-button>
+        <ht-button [label]="'Save Entry'" [severity]="'primary'" [loading]="saving" [disabled]="loading"
+            (onClick)="saveLogs()">
+        </ht-button>
+    </div>
 </ht-modal>
