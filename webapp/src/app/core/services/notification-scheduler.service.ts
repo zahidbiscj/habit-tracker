@@ -26,27 +26,28 @@ export class NotificationSchedulerService {
     }
 
     console.log('🚀 Starting notification scheduler...');
-    
-    // Request permission first
+
+    // Kick off a permission request (non-blocking for the scheduler)
     this.browserNotification.requestPermission().subscribe(permission => {
-      if (permission === 'granted') {
-        console.log('✅ Notification permission granted');
-        
-        // Check immediately on start
-        console.log('▶️ Running initial notification check...');
-        this.checkNotifications();
-        
-        // Check every minute
-        this.checkInterval = setInterval(() => {
-          this.checkNotifications();
-        }, 60000); // 60 seconds
-        
-        console.log('✅ Scheduler started - checking every 60 seconds');
-      } else {
-        console.warn('⚠️ Notification permission denied - scheduler not started');
-        console.log('📝 To enable: Click Test Instant Notification button first');
-      }
+      console.log(`🔐 Notification permission status: ${permission}`);
     });
+
+    // Run an immediate check so we don't miss near-time notifications
+    console.log('▶️ Running initial notification check...');
+    this.checkNotifications();
+
+    // Align the interval exactly to the next minute boundary to improve reliability
+    const now = new Date();
+    const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    setTimeout(() => {
+      // First aligned check at HH:mm:00
+      this.checkNotifications();
+      // Subsequent checks every full minute
+      this.checkInterval = setInterval(() => {
+        this.checkNotifications();
+      }, 60000); // 60 seconds
+      console.log('✅ Scheduler aligned to minute boundary and started');
+    }, Math.max(msToNextMinute, 0));
 
     // Reset the "notified today" set at midnight
     this.resetAtMidnight();
@@ -115,18 +116,21 @@ export class NotificationSchedulerService {
     currentDay: number, 
     currentTime: string
   ): boolean {
-    // Check if notification is for today
-    if (!notification.daysOfWeek.includes(currentDay)) {
+    // Normalize days in case Firestore has strings (e.g., '0', 'Sun', 'Sunday')
+    const normalizedDays = this.normalizeDays(notification.daysOfWeek as any);
+    if (!normalizedDays.includes(currentDay)) {
       return false;
     }
 
-    // Check if it's the right time
-    if (notification.time !== currentTime) {
+    // Allow a window around the scheduled minute so we never miss due to drift
+    const now = new Date();
+    const withinWindow = this.isWithinScheduledWindow(now, notification.time, 45); // seconds
+    if (!withinWindow) {
       return false;
     }
 
-    // Check if we already notified for this notification today
-    const notificationKey = `${notification.id}-${currentTime}`;
+    // Dedupe within the day for the scheduled minute
+    const notificationKey = this.buildDailyNotificationKey(notification.id, notification.time);
     if (this.notifiedToday.has(notificationKey)) {
       return false;
     }
@@ -138,7 +142,7 @@ export class NotificationSchedulerService {
    * Trigger a browser notification
    */
   private triggerNotification(notification: NotificationModel): void {
-    const notificationKey = `${notification.id}-${this.formatTime(new Date())}`;
+    const notificationKey = this.buildDailyNotificationKey(notification.id, notification.time);
     
     console.log(`🔔 TRIGGERING NOTIFICATION: "${notification.title}"`);
     
@@ -167,6 +171,58 @@ export class NotificationSchedulerService {
         console.error(`❌ Permission denied: ${permission}`);
       }
     });
+  }
+
+  /**
+   * Normalize an array of days to number[0..6]
+   */
+  private normalizeDays(days: Array<number | string>): number[] {
+    const mapNameToNum: Record<string, number> = {
+      sun: 0, sunday: 0,
+      mon: 1, monday: 1,
+      tue: 2, tuesday: 2,
+      wed: 3, wednesday: 3,
+      thu: 4, thursday: 4,
+      fri: 5, friday: 5,
+      sat: 6, saturday: 6
+    };
+    const out: number[] = [];
+    for (const d of days || []) {
+      if (typeof d === 'number' && d >= 0 && d <= 6) {
+        out.push(d);
+      } else if (typeof d === 'string') {
+        const trimmed = d.trim().toLowerCase();
+        if (/^[0-6]$/.test(trimmed)) {
+          out.push(parseInt(trimmed, 10));
+        } else if (mapNameToNum.hasOwnProperty(trimmed)) {
+          out.push(mapNameToNum[trimmed]);
+        }
+      }
+    }
+    // Remove duplicates
+    return Array.from(new Set(out)).sort((a, b) => a - b);
+  }
+
+  /**
+   * Determine if now is within N seconds of the scheduled HH:mm of today
+   */
+  private isWithinScheduledWindow(now: Date, hhmm: string, secondsWindow: number): boolean {
+    const [hhStr, mmStr] = hhmm.split(':');
+    const scheduled = new Date(now);
+    scheduled.setHours(parseInt(hhStr, 10), parseInt(mmStr, 10), 0, 0);
+    const diffMs = Math.abs(now.getTime() - scheduled.getTime());
+    return diffMs <= secondsWindow * 1000;
+  }
+
+  /**
+   * Build a unique key per day and scheduled minute for dedupe
+   */
+  private buildDailyNotificationKey(id: string, hhmm: string): string {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+    const dd = now.getDate().toString().padStart(2, '0');
+    return `${id}-${yyyy}-${mm}-${dd}-${hhmm}`;
   }
 
   /**
