@@ -162,4 +162,24 @@ export class GoalFirebaseService implements IGoalService {
       map(() => void 0)
     );
   }
+
+  getGoalsByIds(goalIds: string[]): Observable<Goal[]> {
+    if (goalIds.length === 0) {
+      return from(Promise.resolve([]));
+    }
+
+    const collectionRef = collection(this.firestore, this.collectionName);
+    const q = query(
+      collectionRef,
+      where('active', '==', true)
+    );
+    
+    return from(getDocs(q)).pipe(
+      map(querySnapshot => {
+        return querySnapshot.docs
+          .map(doc => GoalModel.fromFirestore(doc.id, doc.data()))
+          .filter(goal => goalIds.includes(goal.id));
+      })
+    );
+  }
 }

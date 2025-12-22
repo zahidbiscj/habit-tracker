@@ -1,5 +1,5 @@
 export const environment = {
-    production: TransformStreamDefaultController,
+    production: true,
     firebase: {
         apiKey: "AIzaSyClnaSXQRuc6EAKMiSOe_vhU_heEFoDrDI",
         authDomain: "habit-tracker-1e347.firebaseapp.com",

@@ -45,12 +45,13 @@ import { RegisterComponent } from './features/auth/register/register.component';
 // Admin components
 import { GoalsListComponent } from './features/admin/goals-list/goals-list.component';
 import { GoalFormComponent } from './features/admin/goal-form/goal-form.component';
-// import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
-// import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
+import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
+import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
 
 // User components
 import { UserDashboardComponent } from './features/user/dashboard/user-dashboard.component';
 import { DailyEntryModalComponent } from './features/user/daily-entry-modal/daily-entry-modal.component';
+import { CalendarComponent } from './features/user/calendar/calendar.component';
 
 // Shared components
 // import { SettingsComponent } from './features/shared/settings/settings.component';
@@ -64,11 +65,12 @@ import { DailyEntryModalComponent } from './features/user/daily-entry-modal/dail
     // Admin
     GoalsListComponent,
     GoalFormComponent,
-    // NotificationsListComponent,
-    // NotificationFormComponent,
+    NotificationsListComponent,
+    NotificationFormComponent,
     // User
     UserDashboardComponent,
     DailyEntryModalComponent,
+    CalendarComponent,
     // Shared
     // SettingsComponent
   ],

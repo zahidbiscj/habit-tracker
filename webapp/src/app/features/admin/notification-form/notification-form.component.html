@@ -1,0 +1,93 @@
+<div class="form-container">
+  <div class="header">
+    <button class="btn-cancel" (click)="cancel()">← Cancel</button>
+    <h2>{{ isEditMode ? 'Edit Notification' : 'Create New Notification' }}</h2>
+    <button class="btn-save" (click)="saveNotification()" [disabled]="loading">
+      {{ loading ? 'Saving...' : 'Save' }}
+    </button>
+  </div>
+
+  <div class="loading-spinner" *ngIf="loading && isEditMode">
+    <p>Loading notification...</p>
+  </div>
+
+  <form class="notification-form" *ngIf="!loading || !isEditMode">
+    <div class="form-group">
+      <label for="title">Title <span class="required">*</span></label>
+      <input
+        type="text"
+        id="title"
+        [(ngModel)]="notification.title"
+        name="title"
+        placeholder="e.g., Daily Reminder"
+        maxlength="100"
+        [disabled]="loading"
+      />
+      <small class="helper-text">Max 100 characters</small>
+    </div>
+
+    <div class="form-group">
+      <label for="body">Message <span class="required">*</span></label>
+      <textarea
+        id="body"
+        [(ngModel)]="notification.body"
+        name="body"
+        rows="4"
+        placeholder="e.g., Don't forget to fill your daily habits!"
+        maxlength="500"
+        [disabled]="loading"
+      ></textarea>
+      <small class="helper-text">Max 500 characters</small>
+    </div>
+
+    <div class="form-group">
+      <label for="time">Time <span class="required">*</span></label>
+      <input
+        type="time"
+        id="time"
+        [(ngModel)]="notification.time"
+        name="time"
+        [disabled]="loading"
+      />
+      <small class="helper-text">24-hour format (e.g., 21:00 for 9:00 PM)</small>
+    </div>
+
+    <div class="form-group">
+      <label>Days of Week <span class="required">*</span></label>
+      <div class="days-checkboxes">
+        <div class="day-checkbox" *ngFor="let day of daysOptions">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="isDaySelected(day.value)"
+              (change)="toggleDay(day.value)"
+              [disabled]="loading"
+            />
+            <span>{{ day.label }}</span>
+          </label>
+        </div>
+      </div>
+      <small class="helper-text">Select at least one day</small>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [(ngModel)]="notification.active"
+          name="active"
+          [disabled]="loading"
+        />
+        <span>Active</span>
+      </label>
+      <small class="helper-text">Inactive notifications will not be sent</small>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel-bottom" (click)="cancel()">Cancel</button>
+      <button type="button" class="btn-save-bottom" (click)="saveNotification()" [disabled]="loading">
+        {{ loading ? 'Saving...' : 'Save Notification' }}
+      </button>
+    </div>
+  </form>
+</div>

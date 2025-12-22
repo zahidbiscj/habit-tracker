@@ -10,11 +10,12 @@ import { RegisterComponent } from './features/auth/register/register.component';
 // Admin components
 import { GoalsListComponent } from './features/admin/goals-list/goals-list.component';
 import { GoalFormComponent } from './features/admin/goal-form/goal-form.component';
-// import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
-// import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
+import { NotificationsListComponent } from './features/admin/notifications-list/notifications-list.component';
+import { NotificationFormComponent } from './features/admin/notification-form/notification-form.component';
 
 // User components
 import { UserDashboardComponent } from './features/user/dashboard/user-dashboard.component';
+import { CalendarComponent } from './features/user/calendar/calendar.component';
 
 // Shared components
 // import { SettingsComponent } from './features/shared/settings/settings.component';
@@ -36,9 +37,10 @@ const routes: Routes = [
       { path: 'goals', component: GoalsListComponent },
       { path: 'goals/create', component: GoalFormComponent },
       { path: 'goals/edit/:id', component: GoalFormComponent },
-      // { path: 'notifications', component: NotificationsListComponent },
-      // { path: 'notifications/create', component: NotificationFormComponent },
-      // { path: 'notifications/edit/:id', component: NotificationFormComponent },
+      { path: 'notifications', component: NotificationsListComponent },
+      { path: 'notifications/create', component: NotificationFormComponent },
+      { path: 'notifications/edit/:id', component: NotificationFormComponent },
+      { path: 'calendar', component: CalendarComponent },
       // { path: 'settings', component: SettingsComponent }
     ]
   },
@@ -50,9 +52,7 @@ const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: UserDashboardComponent },
-      // TODO: Add calendar and daily-entry routes when components are created
-      // { path: 'calendar', component: UserCalendarComponent },
-      // { path: 'daily-entry', component: DailyEntryComponent },
+      { path: 'calendar', component: CalendarComponent },
       // { path: 'settings', component: SettingsComponent }
     ]
   },

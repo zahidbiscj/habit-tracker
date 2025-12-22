@@ -1,0 +1,44 @@
+<div class="notifications-container">
+  <div class="header">
+    <h2>Notifications Management</h2>
+    <button class="btn-create" (click)="createNotification()">
+      + Create Notification
+    </button>
+  </div>
+
+  <div class="loading-spinner" *ngIf="loading">
+    <p>Loading notifications...</p>
+  </div>
+
+  <div class="notifications-list" *ngIf="!loading">
+    <div class="notification-card" *ngFor="let notification of notifications">
+      <div class="notification-header">
+        <span class="notification-icon">🔔</span>
+        <h3>{{ notification.title }}</h3>
+        <div class="notification-actions">
+          <button class="btn-edit" (click)="editNotification(notification.id)">Edit</button>
+          <button class="btn-delete" (click)="deleteNotification(notification)">Delete</button>
+        </div>
+      </div>
+      
+      <div class="notification-body">
+        <p class="notification-message">"{{ notification.body }}"</p>
+        <div class="notification-details">
+          <span class="detail-item">
+            <strong>Time:</strong> {{ notification.time }}
+          </span>
+          <span class="detail-item">
+            <strong>Days:</strong> {{ getDaysDisplay(notification.daysOfWeek) }}
+          </span>
+          <span class="status-badge" [class.active]="notification.active">
+            {{ notification.active ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="notifications.length === 0">
+      <p>No notifications found. Create your first notification!</p>
+    </div>
+  </div>
+</div>

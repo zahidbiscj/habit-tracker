@@ -186,4 +186,12 @@ export class DailyLogFirebaseService implements IDailyLogService {
       })
     );
   }
+
+  getLogsForUserInDateRange(userId: string, startDate: Date, endDate: Date): Observable<DailyLog[]> {
+    return this.getLogsByUserAndDateRange(userId, startDate, endDate);
+  }
+
+  getLogsForUserByDate(userId: string, date: Date): Observable<DailyLog[]> {
+    return this.getLogsByUserAndDate(userId, date);
+  }
 }
