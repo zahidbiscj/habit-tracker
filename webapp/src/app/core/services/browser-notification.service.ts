@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, from, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 export interface BrowserNotificationOptions {
   title: string;
@@ -94,8 +94,44 @@ export class BrowserNotificationService {
       return of(false);
     }
 
+    // Check if service worker is available (PWA)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('✅ Using Service Worker API for notification');
+      
+      return from(navigator.serviceWorker.ready).pipe(
+        map(registration => {
+          registration.showNotification(options.title, {
+            body: options.body,
+            icon: options.icon || '/assets/icons/icon-192x192.svg',
+            badge: options.badge || '/assets/icons/icon-72x72.svg',
+            tag: options.tag || 'habit-tracker-notification',
+            requireInteraction: options.requireInteraction || false,
+            data: {
+              url: window.location.origin
+            }
+          });
+          console.log('✅ Service Worker notification created successfully!');
+          return true;
+        }),
+        catchError(error => {
+          console.error('❌ Service Worker notification error:', error);
+          // Fallback to direct notification
+          return this.showDirectNotification(options);
+        })
+      );
+    } else {
+      // No service worker, use direct Notification API
+      console.log('📱 Using direct Notification API (no service worker)');
+      return this.showDirectNotification(options);
+    }
+  }
+
+  /**
+   * Show notification using direct Notification API
+   */
+  private showDirectNotification(options: BrowserNotificationOptions): Observable<boolean> {
     try {
-      console.log('✅ Creating notification...');
+      console.log('✅ Creating direct notification...');
       const notification = new Notification(options.title, {
         body: options.body,
         icon: options.icon || '/assets/icons/icon-192x192.svg',
@@ -104,7 +140,7 @@ export class BrowserNotificationService {
         requireInteraction: options.requireInteraction || false
       });
 
-      console.log('✅ Notification created successfully!');
+      console.log('✅ Direct notification created successfully!');
 
       // Auto close after 5 seconds unless requireInteraction is true
       if (!options.requireInteraction) {
@@ -135,8 +171,8 @@ export class BrowserNotificationService {
 
       return of(true);
     } catch (error) {
-      console.error('❌ Error showing notification:', error);
-      alert(`Failed to show notification: ${error}`);
+      console.error('❌ Error showing direct notification:', error);
+      alert(`Failed to show notification: ${error}\n\nTry refreshing the page or using a different browser.`);
       return of(false);
     }
   }
