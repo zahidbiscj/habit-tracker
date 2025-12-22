@@ -1,0 +1,26 @@
+<div class="test-notification-container">
+  <h3>🔔 Test Browser Notifications</h3>
+  <p class="info-text">
+    Test if device notifications are working. Click the button below to:
+  </p>
+  <ul>
+    <li>Request notification permission (if not granted)</li>
+    <li>Show a test notification on your device</li>
+  </ul>
+  
+  <button class="btn-test" (click)="testNotification()">
+    🔔 Test Notification
+  </button>
+  
+  <div class="status-info" *ngIf="permissionStatus">
+    <p><strong>Permission Status:</strong> {{ permissionStatus }}</p>
+    <p class="help-text" *ngIf="permissionStatus === 'denied'">
+      ⚠️ Notifications are blocked. Please enable them in your browser settings:
+      <br>Chrome/Edge: Click the 🔒 lock icon in address bar → Site settings → Notifications → Allow
+      <br>Firefox: Click the ⓘ icon in address bar → Permissions → Notifications → Allow
+    </p>
+    <p class="success-text" *ngIf="permissionStatus === 'granted'">
+      ✅ Notifications are enabled! You'll receive alerts when scheduled.
+    </p>
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthFirebaseService } from './core/services/firebase/auth-firebase.service';
 import { User } from './core/models/user.model';
+import { NotificationSchedulerService } from './core/services/notification-scheduler.service';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -17,7 +18,8 @@ export class AppComponent implements OnInit {
 
   constructor(
     private authService: AuthFirebaseService,
-    private router: Router
+    private router: Router,
+    private notificationScheduler: NotificationSchedulerService
   ) {}
 
   ngOnInit(): void {
@@ -25,6 +27,14 @@ export class AppComponent implements OnInit {
     this.authService.getCurrentUser().subscribe(user => {
       this.currentUser = user;
       this.isAdmin = user?.role === 'admin';
+      
+      // Start notification scheduler when user logs in
+      if (user) {
+        console.log('Starting notification scheduler for user:', user.name);
+        this.notificationScheduler.startScheduler();
+      } else {
+        this.notificationScheduler.stopScheduler();
+      }
     });
 
     // Show/hide navigation based on route

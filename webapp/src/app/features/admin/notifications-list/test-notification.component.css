@@ -1,0 +1,61 @@
+.test-notification-container {
+  background: #f8f9fa;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+}
+
+.info-text {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+ul {
+  text-align: left;
+  display: inline-block;
+  margin: 10px auto;
+  color: #555;
+}
+
+.btn-test {
+  background: #667eea;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background 0.3s ease;
+}
+
+.btn-test:hover {
+  background: #5568d3;
+}
+
+.status-info {
+  margin-top: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.help-text {
+  color: #e67e22;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+.success-text {
+  color: #27ae60;
+  font-weight: 500;
+}

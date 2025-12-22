@@ -55,6 +55,7 @@ import { CalendarComponent } from './features/user/calendar/calendar.component';
 
 // Shared components
 // import { SettingsComponent } from './features/shared/settings/settings.component';
+import { TestNotificationComponent } from './features/admin/notifications-list/test-notification.component';
 
 @NgModule({
   declarations: [
@@ -67,6 +68,7 @@ import { CalendarComponent } from './features/user/calendar/calendar.component';
     GoalFormComponent,
     NotificationsListComponent,
     NotificationFormComponent,
+    TestNotificationComponent,
     // User
     UserDashboardComponent,
     DailyEntryModalComponent,
