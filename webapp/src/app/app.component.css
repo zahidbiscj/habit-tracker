@@ -12,7 +12,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Sidebar */
+/* Sidebar (overlay) */
 .sidebar {
   width: 260px;
   background: #ffffff;
@@ -23,13 +23,14 @@
   height: 100vh;
   left: 0;
   top: 0;
-  transition: width 0.3s ease, transform 0.3s ease;
-  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1100;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
-.sidebar.collapsed {
-  width: 70px;
+.sidebar.open {
+  transform: translateX(0);
 }
 
 /* Sidebar Header */
@@ -69,9 +70,7 @@
   overflow: hidden;
 }
 
-.sidebar.collapsed .logo-text {
-  display: none;
-}
+/* logo text hidden when overlay closed is implicit */
 
 .sidebar-toggle {
   width: 32px;
@@ -114,9 +113,7 @@
   letter-spacing: 0.05em;
 }
 
-.sidebar.collapsed .nav-group-label {
-  display: none;
-}
+/* hide labels only by template when needed */
 
 .nav-link {
   display: flex;
@@ -136,14 +133,7 @@
   text-align: left;
 }
 
-.sidebar.collapsed .nav-link {
-  justify-content: center;
-  padding: 0.75rem;
-}
-
-.sidebar.collapsed .nav-link span {
-  display: none;
-}
+/* no collapsed state needed in overlay mode */
 
 .nav-link i {
   font-size: 1.125rem;
@@ -181,9 +171,7 @@
   background: #f9fafb;
 }
 
-.sidebar.collapsed .user-profile {
-  justify-content: center;
-}
+/* overlay mode keeps profile layout */
 
 .user-avatar {
   width: 40px;
@@ -203,9 +191,7 @@
   overflow: hidden;
 }
 
-.sidebar.collapsed .user-info {
-  display: none;
-}
+/* overlay mode keeps user info when open */
 
 .user-name {
   font-weight: 600;
@@ -239,26 +225,57 @@
   transition: all 0.2s;
 }
 
-.sidebar.collapsed .logout-btn span {
-  display: none;
-}
+/* overlay mode keeps logout label when open */
 
 .logout-btn:hover {
   background: #fecaca;
 }
 
-/* Main Content */
+/* Main Content always full width; sidebar overlays */
 .main-content {
   flex: 1;
-  margin-left: 260px;
   min-height: 100vh;
   background: #f8f9fa;
-  transition: margin-left 0.3s ease;
-  padding: 2rem;
 }
 
-.sidebar.collapsed + .main-content {
-  margin-left: 70px;
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.topbar-title {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.content-wrapper {
+  padding: 1rem;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 1050;
 }
 
 /* Scrollbar Styling */
@@ -281,21 +298,8 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .sidebar.show {
-    transform: translateX(0);
-  }
-
   .main-content {
-    margin-left: 0;
     padding: 1rem;
-  }
-
-  .sidebar.collapsed + .main-content {
-    margin-left: 0;
   }
 }
 

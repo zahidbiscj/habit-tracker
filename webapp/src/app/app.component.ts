@@ -16,6 +16,7 @@ export class AppComponent implements OnInit {
   showNavigation: boolean = false;
   isAdmin: boolean = false;
   sidebarCollapsed: boolean = false;
+  showSidebar: boolean = false;
 
   constructor(
     private authService: AuthFirebaseService,
@@ -66,7 +67,7 @@ export class AppComponent implements OnInit {
   }
 
   toggleSidebar(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.showSidebar = !this.showSidebar;
   }
 
   getUserInitials(): string {
@@ -76,5 +77,9 @@ export class AppComponent implements OnInit {
       return (names[0][0] + names[1][0]).toUpperCase();
     }
     return this.currentUser.name.substring(0, 2).toUpperCase();
+  }
+
+  closeSidebar(): void {
+    this.showSidebar = false;
   }
 }

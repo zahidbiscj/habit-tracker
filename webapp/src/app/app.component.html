@@ -1,13 +1,13 @@
 <div class="app-container" *ngIf="showNavigation && currentUser">
-  <!-- Modern Sidebar -->
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+  <!-- Overlay Sidebar -->
+  <aside class="sidebar" [class.open]="showSidebar">
     <div class="sidebar-header">
       <div class="logo">
         <div class="logo-icon">📊</div>
         <span class="logo-text" *ngIf="!sidebarCollapsed">Habit Tracker</span>
       </div>
-      <button class="sidebar-toggle" (click)="toggleSidebar()">
-        <i class="pi" [ngClass]="sidebarCollapsed ? 'pi-chevron-right' : 'pi-chevron-left'"></i>
+      <button class="sidebar-toggle" (click)="toggleSidebar()" [title]="showSidebar ? 'Close' : 'Open'">
+        <i class="pi" [ngClass]="showSidebar ? 'pi-times' : 'pi-bars'"></i>
       </button>
     </div>
 
@@ -91,9 +91,20 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
+  <!-- Backdrop -->
+  <div class="backdrop" *ngIf="showSidebar" (click)="closeSidebar()"></div>
+
+  <!-- Main Content with Topbar -->
   <main class="main-content">
-    <router-outlet></router-outlet>
+    <div class="topbar">
+      <button class="icon-btn" (click)="toggleSidebar()" title="Menu">
+        <i class="pi pi-bars"></i>
+      </button>
+      <div class="topbar-title">{{ isAdmin ? 'Admin' : 'User' }} Panel</div>
+    </div>
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
   </main>
 </div>
 
