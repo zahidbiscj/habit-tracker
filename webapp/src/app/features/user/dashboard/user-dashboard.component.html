@@ -10,6 +10,8 @@
                     </option>
                 </select>
                 <input type="number" [(ngModel)]="selectedYear" (change)="onMonthChange()" class="year-input" min="2020" max="2030">
+                 <ht-button [label]="'Go to Today'" [severity]="'primary'" [outlined]="true" [size]="'small'" (onClick)="goToToday()" class="goto-today-btn">
+                </ht-button>
             </div>
 
             <!-- Date Controls: Row 2 (Prev/Date/Next + Today) -->
@@ -21,8 +23,6 @@
                     <span class="today-badge" *ngIf="isToday(selectedDate)">Today</span>
                 </div>
                 <ht-button [icon]="'pi pi-chevron-right'" [text]="true" (onClick)="goToNextDay()" class="nav-btn">
-                </ht-button>
-                <ht-button [label]="'Go to Today'" [severity]="'secondary'" [outlined]="true" [size]="'small'" (onClick)="goToToday()" class="goto-today-btn">
                 </ht-button>
             </div>
 
