@@ -1,0 +1,10 @@
+
+    <svg width="384" height="384" xmlns="http://www.w3.org/2000/svg">
+      <rect width="384" height="384" fill="#667eea" rx="57.599999999999994"/>
+      <path d="M 134.39999999999998 211.20000000000002 L 172.8 249.60000000000002 L 261.12 145.92000000000002" 
+            stroke="white" stroke-width="30.72" fill="none" 
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="192" cy="192" r="107.52000000000001" 
+              stroke="white" stroke-width="15.36" fill="none"/>
+    </svg>
+  
