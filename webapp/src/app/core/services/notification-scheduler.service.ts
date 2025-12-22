@@ -231,15 +231,34 @@ export class NotificationSchedulerService {
    * Test notification (for debugging)
    */
   testNotification(): void {
+    console.log('🧪 Testing notification...');
+    
     this.browserNotification.requestPermission().subscribe(permission => {
+      console.log('Permission received:', permission);
+      
       if (permission === 'granted') {
+        console.log('✅ Permission granted, showing test notification...');
+        
         this.browserNotification.show({
           title: '🎯 Test Notification',
-          body: 'If you see this, notifications are working!',
-          requireInteraction: false
-        }).subscribe();
+          body: 'SUCCESS! If you see this, notifications are working perfectly! 🎉',
+          requireInteraction: true // Keep it open until user clicks
+        }).subscribe(success => {
+          console.log('Notification show result:', success);
+          
+          if (success) {
+            console.log('✅✅✅ NOTIFICATION SHOWN SUCCESSFULLY!');
+            setTimeout(() => {
+              alert('✅ Notification shown!\n\nDid you see a popup notification?\n\nIf YES: Notifications are working!\nIf NO: Check notification center or system tray');
+            }, 500);
+          } else {
+            console.error('❌ Failed to show notification');
+            alert('❌ Failed to show notification.\n\nTroubleshooting:\n1. Check if Do Not Disturb is enabled\n2. Check notification center/system tray\n3. Try a different browser');
+          }
+        });
       } else {
-        alert('Please enable notifications in your browser settings');
+        console.warn('❌ Permission denied or unavailable');
+        alert(`❌ Cannot show notifications.\n\nPermission: ${permission}\n\nPlease enable notifications in your browser settings.`);
       }
     });
   }
