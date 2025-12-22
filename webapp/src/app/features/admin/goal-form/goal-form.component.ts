@@ -81,6 +81,7 @@ export class GoalFormComponent implements OnInit {
   }
 
   loadGoal(goalId: string): void {
+    console.log('Loading goal with ID:', goalId);
     this.loading = true;
     
     forkJoin({
@@ -89,6 +90,7 @@ export class GoalFormComponent implements OnInit {
       assignments: this.goalAssignmentService.getAssignmentsByGoalId(goalId)
     }).subscribe({
       next: (result) => {
+        console.log('Loaded goal data:', result);
         if (result.goal) {
           this.goalName = result.goal.name;
           this.goalDescription = result.goal.description || '';
@@ -103,13 +105,20 @@ export class GoalFormComponent implements OnInit {
           }));
           
           this.selectedUserIds = result.assignments.map(a => a.userId);
+          console.log('Loaded assigned user IDs:', this.selectedUserIds);
+          console.log('Available users:', this.users);
+        } else {
+          console.error('Goal not found');
+          alert('Goal not found');
+          this.router.navigate(['/admin/goals']);
         }
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading goal:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         this.loading = false;
-        alert('Failed to load goal');
+        alert('Failed to load goal: ' + (error.message || 'Unknown error'));
         this.router.navigate(['/admin/goals']);
       }
     });
@@ -330,6 +339,19 @@ export class GoalFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/admin/goals']);
+  }
+
+  isUserSelected(userId: string): boolean {
+    return this.selectedUserIds.includes(userId);
+  }
+
+  toggleUserSelection(userId: string): void {
+    const index = this.selectedUserIds.indexOf(userId);
+    if (index > -1) {
+      this.selectedUserIds.splice(index, 1);
+    } else {
+      this.selectedUserIds.push(userId);
+    }
   }
 
   private generateId(): string {

@@ -29,8 +29,7 @@ export class TaskFirebaseService implements ITaskService {
     const collectionRef = collection(this.firestore, this.collectionName);
     const q = query(
       collectionRef,
-      where('goalId', '==', goalId),
-      orderBy('position', 'asc')
+      where('goalId', '==', goalId)
     );
     
     return from(getDocs(q)).pipe(
@@ -45,8 +44,7 @@ export class TaskFirebaseService implements ITaskService {
     const q = query(
       collectionRef,
       where('goalId', '==', goalId),
-      where('active', '==', true),
-      orderBy('position', 'asc')
+      where('active', '==', true)
     );
     
     return from(getDocs(q)).pipe(

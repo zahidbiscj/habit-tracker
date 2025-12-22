@@ -84,11 +84,14 @@
         <h3>Assign to Users</h3>
         <div class="user-checkboxes">
           <div class="user-checkbox" *ngFor="let user of users">
-            <ht-checkbox
-              [(ngModel)]="selectedUserIds"
-              [value]="user.id"
-              [label]="user.name + ' (' + user.email + ')'">
-            </ht-checkbox>
+            <label class="checkbox-label">
+              <input 
+                type="checkbox"
+                [checked]="isUserSelected(user.id)"
+                (change)="toggleUserSelection(user.id)"
+                [disabled]="loading">
+              <span>{{ user.name }} ({{ user.email }})</span>
+            </label>
           </div>
         </div>
       </div>

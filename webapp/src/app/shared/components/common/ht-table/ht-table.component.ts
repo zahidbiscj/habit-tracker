@@ -97,4 +97,12 @@ export class HtTableComponent {
   handleRowUnselect(event: any) {
     this.onRowUnselect.emit(event.data);
   }
+
+  isTemplateFunction(template: any): boolean {
+    return typeof template === 'function';
+  }
+
+  callTemplateFunction(template: any, row: any): string {
+    return template(row);
+  }
 }

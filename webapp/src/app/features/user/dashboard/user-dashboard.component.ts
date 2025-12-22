@@ -6,7 +6,7 @@ import { TaskFirebaseService } from '../../../core/services/firebase/task-fireba
 import { DailyLogFirebaseService } from '../../../core/services/firebase/daily-log-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
-import { forkJoin } from 'rxjs';
+import { forkJoin, from } from 'rxjs';
 
 interface GoalWithTasks {
   goal: Goal;
@@ -52,32 +52,51 @@ export class UserDashboardComponent implements OnInit {
 
   loadDashboardData(): void {
     this.loading = true;
+    console.log('Loading dashboard data for user:', this.currentUserId);
+    console.log('Selected date:', this.selectedDate);
     
     // Get user's goal assignments
     this.goalAssignmentService.getActiveAssignmentsByUserId(this.currentUserId).subscribe({
       next: (assignments) => {
+        console.log('Found assignments:', assignments);
         if (assignments.length === 0) {
           this.goalsWithTasks = [];
           this.loading = false;
           return;
         }
 
-        // Get goals and tasks for each assignment
-        const goalObservables = assignments.map(assignment => 
-          forkJoin({
-            goal: this.goalService.getGoalById(assignment.goalId),
-            tasks: this.taskService.getActiveTasksByGoalId(assignment.goalId)
-          })
-        );
-
-        forkJoin(goalObservables).subscribe({
-          next: (results) => {
-            const validResults = results.filter(r => r.goal !== null) as { goal: Goal; tasks: Task[] }[];
+        // Extract goal IDs from assignments
+        const goalIds = assignments.map(a => a.goalId);
+        console.log('Goal IDs to filter:', goalIds);
+        
+        // Get goals filtered by date range on Firebase side
+        this.goalService.getGoalsForUserOnDate(goalIds, this.selectedDate).subscribe({
+          next: (goals) => {
+            console.log('Goals filtered by date from Firebase:', goals);
             
-            // Get today's logs to calculate completion
-            this.dailyLogService.getLogsByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
-              next: (logs) => {
-                this.goalsWithTasks = validResults.map(result => {
+            if (goals.length === 0) {
+              this.goalsWithTasks = [];
+              this.loading = false;
+              return;
+            }
+            
+            // Get tasks for each goal
+            const goalTaskObservables = goals.map(goal => 
+              forkJoin({
+                goal: from(Promise.resolve(goal)),
+                tasks: this.taskService.getActiveTasksByGoalId(goal.id)
+              })
+            );
+
+            forkJoin(goalTaskObservables).subscribe({
+              next: (results) => {
+                console.log('Loaded goals and tasks:', results);
+                
+                // Get logs for selected date to calculate completion
+                this.dailyLogService.getLogsByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
+                  next: (logs) => {
+                    console.log('Loaded daily logs:', logs);
+                    this.goalsWithTasks = results.map(result => {
                   const taskIds = result.tasks.map(t => t.id);
                   const logsForGoal = logs.filter(log => taskIds.includes(log.taskId));
                   const completedCount = logsForGoal.filter(log => log.value).length;
@@ -93,6 +112,7 @@ export class UserDashboardComponent implements OnInit {
                   };
                 });
                 
+                console.log('Final goalsWithTasks:', this.goalsWithTasks);
                 this.loading = false;
               },
               error: (error) => {
@@ -102,7 +122,13 @@ export class UserDashboardComponent implements OnInit {
             });
           },
           error: (error) => {
-            console.error('Error loading goals:', error);
+            console.error('Error loading goals and tasks:', error);
+            this.loading = false;
+          }
+        });
+          },
+          error: (error) => {
+            console.error('Error loading goals filtered by date:', error);
             this.loading = false;
           }
         });

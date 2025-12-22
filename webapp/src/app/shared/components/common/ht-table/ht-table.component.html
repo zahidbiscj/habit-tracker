@@ -26,8 +26,6 @@
     [(selection)]="selectedRows"
     (onRowSelect)="handleRowSelect($event)"
     (onRowUnselect)="handleRowUnselect($event)"
-    [showGridlines]="showGridlines"
-    [stripedRows]="stripedRows"
     [responsiveLayout]="responsiveLayout"
     [scrollable]="scrollable"
     [scrollHeight]="scrollHeight"
@@ -51,7 +49,10 @@
           <ng-container *ngIf="!col.template">
             {{ getNestedValue(row, col.field) }}
           </ng-container>
-          <ng-container *ngIf="col.template">
+          <ng-container *ngIf="col.template && isTemplateFunction(col.template)">
+            {{ callTemplateFunction(col.template, row) }}
+          </ng-container>
+          <ng-container *ngIf="col.template && !isTemplateFunction(col.template)">
             <ng-container *ngTemplateOutlet="col.template; context: { $implicit: row }"></ng-container>
           </ng-container>
         </td>
@@ -61,11 +62,10 @@
               <p-button
                 *ngIf="isActionVisible(action, row)"
                 [icon]="action.icon"
-                [label]="action.label"
                 [severity]="action.severity || 'secondary'"
                 [pTooltip]="action.tooltip"
                 tooltipPosition="top"
-                (onClick)="action.handler(row)"
+                (click)="action.handler(row)"
                 [text]="true"
                 [rounded]="true"
                 size="small"

@@ -10,10 +10,9 @@
 .login-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   width: 100%;
   max-width: 400px;
-  padding: 2rem;
 }
 
 .error-message {
@@ -51,12 +50,6 @@
 /* Mobile First - Already optimized */
 @media (min-width: 768px) {
   .login-content {
-    padding: 2.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .login-content {
-    padding: 3rem;
+    gap: 1.5rem;
   }
 }

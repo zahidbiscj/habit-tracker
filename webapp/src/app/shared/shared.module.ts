@@ -13,7 +13,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 
-// Custom Reusable Components
+// Custom Reusable Components (now standalone)
 import { HtInputComponent } from './components/common/ht-input/ht-input.component';
 import { HtTextareaComponent } from './components/common/ht-textarea/ht-textarea.component';
 import { HtDropdownComponent } from './components/common/ht-dropdown/ht-dropdown.component';

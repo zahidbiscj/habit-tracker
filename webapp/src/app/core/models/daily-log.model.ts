@@ -5,8 +5,10 @@ export interface DailyLog {
   id: string;
   date: Date;
   taskId: string;
+  goalId: string;
   userId: string;
   value: boolean;
+  notes?: string;
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -18,8 +20,10 @@ export class DailyLogModel implements DailyLog {
   id: string;
   date: Date;
   taskId: string;
+  goalId: string;
   userId: string;
   value: boolean;
+  notes?: string;
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -30,8 +34,10 @@ export class DailyLogModel implements DailyLog {
     this.id = data.id || '';
     this.date = data.date || new Date();
     this.taskId = data.taskId || '';
+    this.goalId = data.goalId || '';
     this.userId = data.userId || '';
     this.value = data.value || false;
+    this.notes = data.notes || '';
     this.active = data.active !== undefined ? data.active : true;
     this.createdDate = data.createdDate || new Date();
     this.updatedDate = data.updatedDate || new Date();
@@ -44,8 +50,10 @@ export class DailyLogModel implements DailyLog {
       id,
       date: data.date?.toDate() || new Date(),
       taskId: data.taskId,
+      goalId: data.goalId,
       userId: data.userId,
       value: data.value,
+      notes: data.notes,
       active: data.active,
       createdDate: data.createdDate?.toDate() || new Date(),
       updatedDate: data.updatedDate?.toDate() || new Date(),
@@ -58,8 +66,10 @@ export class DailyLogModel implements DailyLog {
     return {
       date: this.date,
       taskId: this.taskId,
+      goalId: this.goalId,
       userId: this.userId,
       value: this.value,
+      notes: this.notes,
       active: this.active,
       createdDate: this.createdDate,
       updatedDate: this.updatedDate,

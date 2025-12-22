@@ -42,9 +42,14 @@
 
 .ht-table-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.ht-table-actions ::ng-deep .p-button {
+  min-width: auto;
 }
 
 .ht-table-empty {

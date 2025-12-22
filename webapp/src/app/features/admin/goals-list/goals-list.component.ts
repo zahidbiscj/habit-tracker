@@ -78,16 +78,19 @@ export class GoalsListComponent implements OnInit {
   }
 
   loadGoals(): void {
+    console.log('Loading goals...');
     this.loading = true;
     this.goalService.getAllGoals().subscribe({
       next: (goals) => {
+        console.log('Loaded goals:', goals);
         this.goals = goals;
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading goals:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         this.loading = false;
-        alert('Failed to load goals');
+        alert('Failed to load goals: ' + (error.message || 'Unknown error'));
       }
     });
   }
@@ -105,10 +108,21 @@ export class GoalsListComponent implements OnInit {
   }
 
   editGoal(goal: Goal): void {
+    console.log('Editing goal:', goal);
+    if (!goal || !goal.id) {
+      alert('Invalid goal selected');
+      return;
+    }
     this.router.navigate(['/admin/goals/edit', goal.id]);
   }
 
   deleteGoal(goal: Goal): void {
+    console.log('Deleting goal:', goal);
+    if (!goal || !goal.id) {
+      alert('Invalid goal selected');
+      return;
+    }
+    
     if (!confirm(`Are you sure you want to delete "${goal.name}"? This will also delete all tasks and assignments.`)) {
       return;
     }

@@ -50,6 +50,7 @@ import { GoalFormComponent } from './features/admin/goal-form/goal-form.componen
 
 // User components
 import { UserDashboardComponent } from './features/user/dashboard/user-dashboard.component';
+import { DailyEntryModalComponent } from './features/user/daily-entry-modal/daily-entry-modal.component';
 
 // Shared components
 // import { SettingsComponent } from './features/shared/settings/settings.component';
@@ -67,6 +68,7 @@ import { UserDashboardComponent } from './features/user/dashboard/user-dashboard
     // NotificationFormComponent,
     // User
     UserDashboardComponent,
+    DailyEntryModalComponent,
     // Shared
     // SettingsComponent
   ],

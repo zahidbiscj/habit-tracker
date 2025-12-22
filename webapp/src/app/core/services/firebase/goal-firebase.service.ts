@@ -27,9 +27,8 @@ export class GoalFirebaseService implements IGoalService {
 
   getAllGoals(): Observable<Goal[]> {
     const collectionRef = collection(this.firestore, this.collectionName);
-    const q = query(collectionRef, orderBy('startDate', 'desc'));
     
-    return from(getDocs(q)).pipe(
+    return from(getDocs(collectionRef)).pipe(
       map(querySnapshot => 
         querySnapshot.docs.map(doc => GoalModel.fromFirestore(doc.id, doc.data()))
       )
@@ -40,8 +39,7 @@ export class GoalFirebaseService implements IGoalService {
     const collectionRef = collection(this.firestore, this.collectionName);
     const q = query(
       collectionRef,
-      where('active', '==', true),
-      orderBy('startDate', 'desc')
+      where('active', '==', true)
     );
     
     return from(getDocs(q)).pipe(
@@ -56,6 +54,53 @@ export class GoalFirebaseService implements IGoalService {
     // For simplicity, we'll fetch all active goals and filter on client side
     // In production, consider using a composite query or denormalization
     return this.getActiveGoals();
+  }
+
+  getGoalsForUserOnDate(goalIds: string[], selectedDate: Date): Observable<Goal[]> {
+    if (goalIds.length === 0) {
+      return from(Promise.resolve([]));
+    }
+
+    const collectionRef = collection(this.firestore, this.collectionName);
+    const selectedTimestamp = Timestamp.fromDate(selectedDate);
+    
+    // Query goals where:
+    // - goalId is in the list of assigned goals
+    // - startDate <= selectedDate
+    // - active = true
+    const q = query(
+      collectionRef,
+      where('active', '==', true),
+      where('startDate', '<=', selectedTimestamp)
+    );
+    
+    return from(getDocs(q)).pipe(
+      map(querySnapshot => {
+        const goals = querySnapshot.docs
+          .map(doc => GoalModel.fromFirestore(doc.id, doc.data()))
+          .filter(goal => {
+            // Filter by goalIds (assigned to user)
+            if (!goalIds.includes(goal.id)) {
+              return false;
+            }
+            
+            // Check if selectedDate is within goal's date range
+            // Goal started before or on selected date (already checked in query)
+            // Check if goal has no end date OR end date is after or on selected date
+            if (goal.endDate) {
+              const endDate = new Date(goal.endDate);
+              endDate.setHours(23, 59, 59, 999);
+              const selected = new Date(selectedDate);
+              selected.setHours(0, 0, 0, 0);
+              return selected <= endDate;
+            }
+            
+            return true; // No end date means ongoing
+          });
+        
+        return goals;
+      })
+    );
   }
 
   getGoalsByDateRange(startDate: Date, endDate: Date): Observable<Goal[]> {

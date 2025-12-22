@@ -27,13 +27,13 @@
       </div>
 
       <!-- User Navigation -->
-      <div class="nav-section" *ngIf="!isAdmin">
+      <div class="nav-section">
         <h3 class="nav-section-title">My Habits</h3>
         <button class="nav-item" (click)="navigateTo('/user/dashboard')">
           <i class="pi pi-home"></i>
           <span>Dashboard</span>
         </button>
-        <button class="nav-item" (click)="navigateTo('/user/settings')">
+        <button *ngIf="!isAdmin" class="nav-item" (click)="navigateTo('/user/settings')">
           <i class="pi pi-cog"></i>
           <span>Settings</span>
         </button>
