@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NotificationFirebaseService } from '../../../core/services/firebase/notification-firebase.service';
 import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
+import { BrowserNotificationService } from '../../../core/services/browser-notification.service';
 import { Notification, NotificationModel } from '../../../core/models/notification.model';
 
 @Component({
@@ -30,7 +31,8 @@ export class NotificationFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private notificationService: NotificationFirebaseService,
-    private authService: AuthFirebaseService
+    private authService: AuthFirebaseService,
+    private browserNotification: BrowserNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -99,13 +101,30 @@ export class NotificationFormComponent implements OnInit {
     } else {
       this.notification.createdBy = this.currentUserId;
       this.notificationService.createNotification(this.notification).subscribe({
-        next: () => {
-          alert('Notification created successfully!');
-          this.router.navigate(['/admin/notifications']);
+        next: (createdNotification) => {
+          this.loading = false;
+          const daysString = this.getDaysString(this.notification.daysOfWeek);
+          
+          // Show success message with test option
+          const testNow = confirm(
+            `✅ Notification Created Successfully!\n\n` +
+            `Title: ${createdNotification.title}\n` +
+            `Time: ${createdNotification.time}\n` +
+            `Days: ${daysString}\n` +
+            `Status: ${createdNotification.active ? 'Active ✓' : 'Inactive'}\n\n` +
+            `🔔 Do you want to test this notification NOW?\n` +
+            `(Click OK to show a test notification)`
+          );
+
+          if (testNow) {
+            this.testNotificationNow(createdNotification);
+          } else {
+            this.router.navigate(['/admin/notifications']);
+          }
         },
         error: (error) => {
           console.error('Error creating notification:', error);
-          alert('Failed to create notification');
+          alert('Failed to create notification: ' + (error.message || 'Unknown error'));
           this.loading = false;
         }
       });
@@ -154,5 +173,49 @@ export class NotificationFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/admin/notifications']);
+  }
+
+  getDaysString(daysOfWeek: number[]): string {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    if (daysOfWeek.length === 7) return 'Everyday';
+    if (daysOfWeek.length === 0) return 'None';
+    return daysOfWeek.map(d => dayNames[d]).join(', ');
+  }
+
+  testNotificationNow(notification: Notification): void {
+    console.log('🧪 Testing notification:', notification.title);
+    
+    this.browserNotification.requestPermission().subscribe(permission => {
+      if (permission === 'granted') {
+        this.browserNotification.show({
+          title: '🧪 ' + notification.title,
+          body: notification.body + '\n\nThis is a test. The actual notification will appear at ' + notification.time,
+          requireInteraction: true
+        }).subscribe(success => {
+          if (success) {
+            setTimeout(() => {
+              alert(
+                '✅ Test notification sent!\n\n' +
+                'Did you see the notification?\n\n' +
+                'The real notification will appear:\n' +
+                `• Time: ${notification.time}\n` +
+                `• Days: ${this.getDaysString(notification.daysOfWeek)}\n\n` +
+                'Make sure the app is open or installed as PWA.'
+              );
+              this.router.navigate(['/admin/notifications']);
+            }, 1000);
+          } else {
+            alert('Failed to show test notification. Please check browser permissions.');
+            this.router.navigate(['/admin/notifications']);
+          }
+        });
+      } else {
+        alert(
+          `❌ Notification permission: ${permission}\n\n` +
+          'Please enable notifications in your browser settings to test.'
+        );
+        this.router.navigate(['/admin/notifications']);
+      }
+    });
   }
 }
