@@ -1,0 +1,27 @@
+<div class="goals-list-container">
+  <ht-card 
+    [title]="'Goals Management'" 
+    [subtitle]="'Manage all goals and tasks'"
+    [showActions]="true">
+    <div cardActions>
+      <ht-button
+        [label]="'Create New Goal'"
+        [icon]="'pi pi-plus'"
+        [severity]="'primary'"
+        (onClick)="createGoal()">
+      </ht-button>
+    </div>
+
+    <div class="table-container">
+      <ht-table
+        [data]="goals"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading"
+        [searchable]="true"
+        [paginator]="true"
+        [rows]="10">
+      </ht-table>
+    </div>
+  </ht-card>
+</div>

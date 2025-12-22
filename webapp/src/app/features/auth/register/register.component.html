@@ -1,0 +1,73 @@
+<div class="register-container">
+  <ht-card 
+    [title]="'Create Account'" 
+    [subtitle]="'Register to get started'"
+    [elevated]="true">
+    <div class="register-content">
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Name Input -->
+      <ht-input
+        [(ngModel)]="name"
+        [label]="'Full Name'"
+        [type]="'text'"
+        [placeholder]="'Enter your full name'"
+        [icon]="'pi pi-user'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Email Input -->
+      <ht-input
+        [(ngModel)]="email"
+        [label]="'Email'"
+        [type]="'email'"
+        [placeholder]="'Enter your email'"
+        [icon]="'pi pi-envelope'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Password Input -->
+      <ht-input
+        [(ngModel)]="password"
+        [label]="'Password'"
+        [type]="'password'"
+        [placeholder]="'Create a password'"
+        [icon]="'pi pi-lock'"
+        [required]="true"
+        [helperText]="'At least 6 characters'"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Confirm Password Input -->
+      <ht-input
+        [(ngModel)]="confirmPassword"
+        [label]="'Confirm Password'"
+        [type]="'password'"
+        [placeholder]="'Confirm your password'"
+        [icon]="'pi pi-lock'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Register Button -->
+      <ht-button
+        [label]="'Create Account'"
+        [severity]="'primary'"
+        [fullWidth]="true"
+        [loading]="loading"
+        (onClick)="onRegister()">
+      </ht-button>
+
+      <!-- Login Link -->
+      <div class="login-link">
+        Already have an account? 
+        <a (click)="navigateToLogin()" class="link">Sign in here</a>
+      </div>
+    </div>
+  </ht-card>
+</div>

@@ -1,0 +1,113 @@
+<div class="goal-form-container">
+  <ht-card 
+    [title]="isEditMode ? 'Edit Goal' : 'Create New Goal'" 
+    [subtitle]="isEditMode ? 'Update goal details and tasks' : 'Add a new goal with tasks'">
+    <div class="form-content">
+      <!-- Goal Name -->
+      <ht-input
+        [(ngModel)]="goalName"
+        [label]="'Goal Name'"
+        [placeholder]="'Enter goal name'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Goal Description -->
+      <ht-textarea
+        [(ngModel)]="goalDescription"
+        [label]="'Description'"
+        [placeholder]="'Enter goal description (optional)'"
+        [rows]="3"
+        [disabled]="loading">
+      </ht-textarea>
+
+      <!-- Date Range -->
+      <div class="date-range">
+        <ht-datepicker
+          [(ngModel)]="startDate"
+          [label]="'Start Date'"
+          [required]="true"
+          [disabled]="loading">
+        </ht-datepicker>
+
+        <ht-datepicker
+          [(ngModel)]="endDate"
+          [label]="'End Date (Optional)'"
+          [minDate]="startDate"
+          [disabled]="loading">
+        </ht-datepicker>
+      </div>
+
+      <!-- Tasks Section -->
+      <div class="tasks-section">
+        <div class="section-header">
+          <h3>Tasks</h3>
+          <ht-button
+            [label]="'Add Task'"
+            [icon]="'pi pi-plus'"
+            [severity]="'secondary'"
+            [size]="'small'"
+            (onClick)="addTask()">
+          </ht-button>
+        </div>
+
+        <div class="tasks-list">
+          <div class="task-item" *ngFor="let task of tasks; let i = index">
+            <div class="task-number">{{ i + 1 }}</div>
+            <div class="task-fields">
+              <ht-input
+                [(ngModel)]="task.name"
+                [placeholder]="'Task name'"
+                [required]="true"
+                [disabled]="loading">
+              </ht-input>
+              <ht-textarea
+                [(ngModel)]="task.additionalNotes"
+                [placeholder]="'Additional notes (optional)'"
+                [rows]="2"
+                [disabled]="loading">
+              </ht-textarea>
+            </div>
+            <ht-button
+              [icon]="'pi pi-trash'"
+              [severity]="'danger'"
+              [size]="'small'"
+              [text]="true"
+              (onClick)="removeTask(i)">
+            </ht-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Assignment -->
+      <div class="assignment-section">
+        <h3>Assign to Users</h3>
+        <div class="user-checkboxes">
+          <div class="user-checkbox" *ngFor="let user of users">
+            <ht-checkbox
+              [(ngModel)]="selectedUserIds"
+              [value]="user.id"
+              [label]="user.name + ' (' + user.email + ')'">
+            </ht-checkbox>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <ht-button
+          [label]="'Cancel'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (onClick)="onCancel()">
+        </ht-button>
+        <ht-button
+          [label]="isEditMode ? 'Update Goal' : 'Create Goal'"
+          [severity]="'primary'"
+          [loading]="loading"
+          (onClick)="onSubmit()">
+        </ht-button>
+      </div>
+    </div>
+  </ht-card>
+</div>

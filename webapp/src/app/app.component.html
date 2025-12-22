@@ -1,0 +1,63 @@
+<div class="app-container">
+  <!-- Navigation (only shown when logged in) -->
+  <nav class="app-nav" *ngIf="showNavigation && currentUser">
+    <div class="nav-header">
+      <h1 class="nav-title">Habit Tracker</h1>
+      <button class="nav-toggle" (click)="showMobileMenu = !showMobileMenu">
+        <i class="pi pi-bars"></i>
+      </button>
+    </div>
+
+    <div class="nav-menu" [class.show-mobile]="showMobileMenu">
+      <!-- Admin Navigation -->
+      <div class="nav-section" *ngIf="isAdmin">
+        <h3 class="nav-section-title">Admin</h3>
+        <button class="nav-item" (click)="navigateTo('/admin/goals')">
+          <i class="pi pi-list"></i>
+          <span>Goals</span>
+        </button>
+        <button class="nav-item" (click)="navigateTo('/admin/notifications')">
+          <i class="pi pi-bell"></i>
+          <span>Notifications</span>
+        </button>
+        <button class="nav-item" (click)="navigateTo('/admin/settings')">
+          <i class="pi pi-cog"></i>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- User Navigation -->
+      <div class="nav-section" *ngIf="!isAdmin">
+        <h3 class="nav-section-title">My Habits</h3>
+        <button class="nav-item" (click)="navigateTo('/user/dashboard')">
+          <i class="pi pi-home"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" (click)="navigateTo('/user/settings')">
+          <i class="pi pi-cog"></i>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- User Info & Logout -->
+      <div class="nav-footer">
+        <div class="user-info">
+          <i class="pi pi-user"></i>
+          <div class="user-details">
+            <div class="user-name">{{ currentUser?.name }}</div>
+            <div class="user-role">{{ isAdmin ? 'Admin' : 'User' }}</div>
+          </div>
+        </div>
+        <button class="logout-button" (click)="logout()">
+          <i class="pi pi-sign-out"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="app-main" [class.with-nav]="showNavigation && currentUser">
+    <router-outlet></router-outlet>
+  </main>
+</div>

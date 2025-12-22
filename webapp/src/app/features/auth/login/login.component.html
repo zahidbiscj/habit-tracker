@@ -1,0 +1,55 @@
+<div class="login-container">
+  <ht-card 
+    [title]="'Welcome Back'" 
+    [subtitle]="'Sign in to continue'"
+    [elevated]="true">
+    <div class="login-content">
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Email Input -->
+      <ht-input
+        [(ngModel)]="email"
+        [label]="'Email'"
+        [type]="'email'"
+        [placeholder]="'Enter your email'"
+        [icon]="'pi pi-envelope'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Password Input -->
+      <ht-input
+        [(ngModel)]="password"
+        [label]="'Password'"
+        [type]="'password'"
+        [placeholder]="'Enter your password'"
+        [icon]="'pi pi-lock'"
+        [required]="true"
+        [disabled]="loading">
+      </ht-input>
+
+      <!-- Forgot Password Link -->
+      <div class="forgot-password">
+        <a (click)="onForgotPassword()" class="link">Forgot password?</a>
+      </div>
+
+      <!-- Login Button -->
+      <ht-button
+        [label]="'Sign In'"
+        [severity]="'primary'"
+        [fullWidth]="true"
+        [loading]="loading"
+        (onClick)="onLogin()">
+      </ht-button>
+
+      <!-- Register Link -->
+      <div class="register-link">
+        Don't have an account? 
+        <a (click)="navigateToRegister()" class="link">Register here</a>
+      </div>
+    </div>
+  </ht-card>
+</div>
