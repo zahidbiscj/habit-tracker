@@ -282,4 +282,12 @@ export class NotificationSchedulerService {
       }
     });
   }
+
+  /**
+   * Force check notifications immediately (for testing)
+   */
+  forceCheck(): void {
+    console.log('🔧 FORCE CHECK - Running notification check immediately...');
+    this.checkNotifications();
+  }
 }

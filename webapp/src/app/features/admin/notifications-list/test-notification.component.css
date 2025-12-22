@@ -60,7 +60,8 @@ h3 {
 }
 
 .btn-test,
-.btn-test-schedule {
+.btn-test-schedule,
+.btn-force-check {
   background: #667eea;
   color: white;
   padding: 12px 24px;
@@ -77,12 +78,20 @@ h3 {
   background: #27ae60;
 }
 
+.btn-force-check {
+  background: #e67e22;
+}
+
 .btn-test:hover {
   background: #5568d3;
 }
 
 .btn-test-schedule:hover {
   background: #229954;
+}
+
+.btn-force-check:hover {
+  background: #d35400;
 }
 
 .info-box {
