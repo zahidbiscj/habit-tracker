@@ -21,19 +21,19 @@ export class NotificationSchedulerService {
   startScheduler(): void {
     // Prevent multiple schedulers
     if (this.checkInterval) {
-      console.log('⚠️ Scheduler already running');
+      // console.log('⚠️ Scheduler already running');
       return;
     }
 
-    console.log('🚀 Starting notification scheduler...');
+    // console.log('🚀 Starting notification scheduler...');
 
     // Kick off a permission request (non-blocking for the scheduler)
     this.browserNotification.requestPermission().subscribe(permission => {
-      console.log(`🔐 Notification permission status: ${permission}`);
+      // console.log(`🔐 Notification permission status: ${permission}`);
     });
 
     // Run an immediate check so we don't miss near-time notifications
-    console.log('▶️ Running initial notification check...');
+    // console.log('▶️ Running initial notification check...');
     this.checkNotifications();
 
     // Align the interval exactly to the next minute boundary to improve reliability
@@ -46,7 +46,7 @@ export class NotificationSchedulerService {
       this.checkInterval = setInterval(() => {
         this.checkNotifications();
       }, 60000); // 60 seconds
-      console.log('✅ Scheduler aligned to minute boundary and started');
+      // console.log('✅ Scheduler aligned to minute boundary and started');
     }, Math.max(msToNextMinute, 0));
 
     // Reset the "notified today" set at midnight
@@ -71,14 +71,14 @@ export class NotificationSchedulerService {
     const currentDay = now.getDay(); // 0=Sunday, 1=Monday, etc.
     const currentTime = this.formatTime(now);
 
-    console.log(`🔍 Checking notifications at ${currentTime} (Day: ${currentDay} = ${this.getDayName(currentDay)})`);
+    // console.log(`🔍 Checking notifications at ${currentTime} (Day: ${currentDay} = ${this.getDayName(currentDay)})`);
 
     this.notificationService.getActiveNotifications().subscribe({
       next: (notifications) => {
-        console.log(`📋 Found ${notifications.length} active notifications`);
+        // console.log(`📋 Found ${notifications.length} active notifications`);
         
         if (notifications.length === 0) {
-          console.log('ℹ️ No active notifications to check');
+          // console.log('ℹ️ No active notifications to check');
           return;
         }
         
@@ -298,17 +298,14 @@ export class NotificationSchedulerService {
     // Save it to Firebase
     this.notificationService.createNotification(testNotification).subscribe({
       next: () => {
-        console.log('✅ Test notification created successfully');
-        console.log('📋 Notification details:', testNotification);
         
         // Force an immediate check to verify it's in the database
         setTimeout(() => {
-          console.log('🔍 Verifying notification was saved...');
           this.notificationService.getActiveNotifications().subscribe({
             next: (notifications) => {
               const found = notifications.find(n => n.id === testNotification.id);
               if (found) {
-                console.log('✅ Notification found in database:', found);
+                // console.log('✅ Notification found in database:', found);
               } else {
                 console.error('❌ Notification NOT found in database!');
               }
@@ -345,7 +342,7 @@ export class NotificationSchedulerService {
 
     setTimeout(() => {
       this.notifiedToday.clear();
-      console.log('✓ Notification cache cleared at midnight');
+      // console.log('✓ Notification cache cleared at midnight');
       
       // Schedule next midnight reset
       this.resetAtMidnight();
@@ -356,23 +353,23 @@ export class NotificationSchedulerService {
    * Test notification (for debugging)
    */
   testNotification(): void {
-    console.log('🧪 Testing notification...');
+    // console.log('🧪 Testing notification...');
     
     this.browserNotification.requestPermission().subscribe(permission => {
-      console.log('Permission received:', permission);
+      // console.log('Permission received:', permission);
       
       if (permission === 'granted') {
-        console.log('✅ Permission granted, showing test notification...');
+        // console.log('✅ Permission granted, showing test notification...');
         
         this.browserNotification.show({
           title: '🎯 Test Notification',
           body: 'SUCCESS! If you see this, notifications are working perfectly! 🎉',
           requireInteraction: true // Keep it open until user clicks
         }).subscribe(success => {
-          console.log('Notification show result:', success);
+          // console.log('Notification show result:', success);
           
           if (success) {
-            console.log('✅✅✅ NOTIFICATION SHOWN SUCCESSFULLY!');
+            // console.log('✅✅✅ NOTIFICATION SHOWN SUCCESSFULLY!');
             setTimeout(() => {
               alert('✅ Notification shown!\n\nDid you see a popup notification?\n\nIf YES: Notifications are working!\nIf NO: Check notification center or system tray');
             }, 500);
@@ -392,7 +389,7 @@ export class NotificationSchedulerService {
    * Force check notifications immediately (for testing)
    */
   forceCheck(): void {
-    console.log('🔧 FORCE CHECK - Running notification check immediately...');
+    // console.log('🔧 FORCE CHECK - Running notification check immediately...');
     this.checkNotifications();
   }
 }

@@ -7,8 +7,8 @@ import { AuthFirebaseService } from '../../../core/services/firebase/auth-fireba
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
 import { DailyLog } from '../../../core/models/daily-log.model';
-import { forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 interface DayCompletion {
   date: Date;
@@ -52,7 +52,7 @@ export class CalendarComponent implements OnInit {
   selectedDayLoading = false;
 
   monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
+    'July', 'August', 'September', 'October', 'November', 'December'];
   dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   constructor(
@@ -61,7 +61,7 @@ export class CalendarComponent implements OnInit {
     private goalService: GoalFirebaseService,
     private taskService: TaskFirebaseService,
     private dailyLogService: DailyLogFirebaseService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.currentUserId = this.authService.getCurrentUserId() || '';
@@ -73,11 +73,11 @@ export class CalendarComponent implements OnInit {
     this.loading = true;
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
-    
+
     // Get first and last day of month
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    
+
     // Get all days in month
     const days: Date[] = [];
     for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
@@ -88,7 +88,7 @@ export class CalendarComponent implements OnInit {
     this.goalAssignmentService.getActiveAssignmentsByUserId(this.currentUserId).subscribe({
       next: (assignments) => {
         const goalIds = assignments.map(a => a.goalId);
-        
+
         if (goalIds.length === 0) {
           this.monthDays = days.map(date => ({
             date,
@@ -105,7 +105,7 @@ export class CalendarComponent implements OnInit {
         this.goalService.getGoalsByIds(goalIds).subscribe({
           next: (goals) => {
             const taskObservables = goals.map(goal => this.taskService.getTasksByGoalId(goal.id));
-            
+
             forkJoin(taskObservables).subscribe({
               next: (tasksArrays) => {
                 const allTasks: Task[] = tasksArrays.flat();
@@ -147,8 +147,9 @@ export class CalendarComponent implements OnInit {
   }
 
   calculateDayCompletion(date: Date, taskIds: string[], logs: DailyLog[]): DayCompletion {
-    const dateStr = this.formatDateYYYYMMDD(date);
-    const dayLog = logs.find(log => this.formatDateYYYYMMDD(log.date) === dateStr);
+    // Use composite ID format for reliable matching
+    const expectedLogId = this.generateDailyLogId(this.currentUserId, date);
+    const dayLog = logs.find(log => log.id === expectedLogId);
 
     const totalTasks = taskIds.length;
     const completedTasks = dayLog ? dayLog.tasks.filter(e => e.value && taskIds.includes(e.taskId)).length : 0;
@@ -167,78 +168,98 @@ export class CalendarComponent implements OnInit {
 
   loadSelectedDayDetails(): void {
     this.selectedDayLoading = true;
-    
-    this.goalAssignmentService.getActiveAssignmentsByUserId(this.currentUserId).subscribe({
-      next: (assignments) => {
-        const goalIds = assignments.map(a => a.goalId);
-        
-        if (goalIds.length === 0) {
-          this.selectedDayGoals = [];
+    this.clearSelectedDayData();
+
+    this.getActiveGoalsForSelectedDate()
+      .pipe(
+        switchMap(activeGoals => this.getGoalsWithTasks(activeGoals)),
+        switchMap(goalsWithTasks => this.buildSelectedDayData(goalsWithTasks))
+      )
+      .subscribe({
+        next: (data) => {
+          this.selectedDayGoals = data.goals;
+          this.selectedDayAccordions = data.accordions;
           this.selectedDayLoading = false;
-          return;
+        },
+        error: (error) => {
+          console.error('Error loading selected day details:', error);
+          this.selectedDayLoading = false;
         }
+      });
+  }
 
-        this.goalService.getGoalsByIds(goalIds).subscribe({
-          next: (goals) => {
-            const goalObservables = goals.map(goal => 
-              this.taskService.getTasksByGoalId(goal.id).pipe(
-                map(tasks => ({ goal, tasks }))
-              )
-            );
-            
-            forkJoin(goalObservables).subscribe({
-              next: (goalsWithTasks) => {
-                const dateStr = this.formatDateYYYYMMDD(this.selectedDate);
-                
-                this.dailyLogService.getDailyLogByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
-                  next: (dailyLog) => {
-                    const entries = dailyLog?.tasks || [];
-                    // Per-goal completion summary
-                    this.selectedDayGoals = goalsWithTasks.map(gwt => ({
-                      goal: gwt.goal,
-                      completedTasks: entries.filter(e => !!e.value && gwt.tasks.some(t => t.id === e.taskId)).length,
-                      totalTasks: gwt.tasks.length
-                    }));
+  private clearSelectedDayData(): void {
+    this.selectedDayGoals = [];
+    this.selectedDayAccordions = [];
+  }
 
-                    // Accordion details with compact tasks
-                    this.selectedDayAccordions = goalsWithTasks.map(gwt => {
-                      const tasks: GoalTaskItem[] = gwt.tasks.map(t => ({
-                        task: t,
-                        completed: !!entries.find(e => e.taskId === t.id && e.value)
-                      }));
-                      const completedTasks = tasks.filter(x => x.completed).length;
-                      return {
-                        goal: gwt.goal,
-                        tasks,
-                        completedTasks,
-                        totalTasks: tasks.length
-                      };
-                    });
-
-                    this.selectedDayLoading = false;
-                  },
-                  error: (error) => {
-                    console.error('Error loading day details:', error);
-                    this.selectedDayLoading = false;
-                  }
-                });
-              },
-              error: (error) => {
-                console.error('Error loading tasks:', error);
-                this.selectedDayLoading = false;
-              }
-            });
-          },
-          error: (error) => {
-            console.error('Error loading goals:', error);
-            this.selectedDayLoading = false;
+  private getActiveGoalsForSelectedDate(): Observable<Goal[]> {
+    return this.goalAssignmentService.getActiveAssignmentsByUserId(this.currentUserId)
+      .pipe(
+        switchMap(assignments => {
+          const goalIds = assignments.map(a => a.goalId);
+          if (goalIds.length === 0) {
+            return of([]);
           }
-        });
-      },
-      error: (error) => {
-        console.error('Error loading assignments:', error);
-        this.selectedDayLoading = false;
-      }
+          return this.goalService.getGoalsByIds(goalIds);
+        }),
+        map(goals => goals.filter(g => this.isGoalActiveOnDate(g, this.selectedDate)))
+      );
+  }
+
+  private getGoalsWithTasks(activeGoals: Goal[]): Observable<Array<{goal: Goal, tasks: Task[]}>> {
+    if (activeGoals.length === 0) {
+      return of([]);
+    }
+
+    const taskObservables = activeGoals.map(goal =>
+      this.taskService.getTasksByGoalId(goal.id).pipe(
+        map(tasks => ({ goal, tasks }))
+      )
+    );
+
+    return forkJoin(taskObservables);
+  }
+
+  private buildSelectedDayData(goalsWithTasks: Array<{goal: Goal, tasks: Task[]}>): Observable<{goals: GoalWithCompletion[], accordions: GoalAccordion[]}> {
+    if (goalsWithTasks.length === 0) {
+      return of({ goals: [], accordions: [] });
+    }
+
+    return this.dailyLogService.getDailyLogByUserAndDate(this.currentUserId, this.selectedDate)
+      .pipe(
+        map(dailyLog => {
+          const entries = dailyLog?.tasks || [];
+          
+          const goals = this.buildGoalCompletionSummary(goalsWithTasks, entries);
+          const accordions = this.buildGoalAccordions(goalsWithTasks, entries);
+          
+          return { goals, accordions };
+        })
+      );
+  }
+
+  private buildGoalCompletionSummary(goalsWithTasks: Array<{goal: Goal, tasks: Task[]}>, entries: any[]): GoalWithCompletion[] {
+    return goalsWithTasks.map(gwt => ({
+      goal: gwt.goal,
+      completedTasks: entries.filter(e => !!e.value && gwt.tasks.some(t => t.id === e.taskId)).length,
+      totalTasks: gwt.tasks.length
+    }));
+  }
+
+  private buildGoalAccordions(goalsWithTasks: Array<{goal: Goal, tasks: Task[]}>, entries: any[]): GoalAccordion[] {
+    return goalsWithTasks.map(gwt => {
+      const tasks: GoalTaskItem[] = gwt.tasks.map(t => ({
+        task: t,
+        completed: !!entries.find(e => e.taskId === t.id && e.value)
+      }));
+      
+      return {
+        goal: gwt.goal,
+        tasks,
+        completedTasks: tasks.filter(x => x.completed).length,
+        totalTasks: tasks.length
+      };
     });
   }
 
@@ -267,14 +288,14 @@ export class CalendarComponent implements OnInit {
   isToday(date: Date): boolean {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   }
 
   isSelectedDate(date: Date): boolean {
     return date.getDate() === this.selectedDate.getDate() &&
-           date.getMonth() === this.selectedDate.getMonth() &&
-           date.getFullYear() === this.selectedDate.getFullYear();
+      date.getMonth() === this.selectedDate.getMonth() &&
+      date.getFullYear() === this.selectedDate.getFullYear();
   }
 
   getMonthYearDisplay(): string {
@@ -282,11 +303,11 @@ export class CalendarComponent implements OnInit {
   }
 
   getSelectedDateDisplay(): string {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     };
     return this.selectedDate.toLocaleDateString('en-US', options);
   }
@@ -307,10 +328,30 @@ export class CalendarComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  private generateDailyLogId(userId: string, date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${userId}-${year}${month}${day}`;
+  }
+
   getTotalCompletionForSelectedDay(): { completed: number; total: number; percentage: number } {
     const completed = this.selectedDayGoals.reduce((sum, g) => sum + g.completedTasks, 0);
     const total = this.selectedDayGoals.reduce((sum, g) => sum + g.totalTasks, 0);
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
+  }
+
+  private isGoalActiveOnDate(goal: Goal, date: Date): boolean {
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const startDate = new Date(goal.startDate.getFullYear(), goal.startDate.getMonth(), goal.startDate.getDate());
+    const endDate = goal.endDate 
+      ? new Date(goal.endDate.getFullYear(), goal.endDate.getMonth(), goal.endDate.getDate()) 
+      : null;
+    
+    const afterStart = targetDate.getTime() >= startDate.getTime();
+    const beforeEnd = endDate ? targetDate.getTime() <= endDate.getTime() : true;
+    
+    return goal.active && afterStart && beforeEnd;
   }
 }
