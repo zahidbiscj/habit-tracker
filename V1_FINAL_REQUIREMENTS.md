@@ -1759,7 +1759,7 @@ dailyLogs.where('userId', '==', currentUserId)
 │                                                          │
 │ Daily Habits Completion:                                │
 │                                                          │
-│ ✓ On Time Salah (3/5 tasks)                             │
+│ ✓ On Time Salah (3/5 tasks)- Accordion on/off when clicked in the goal. tasks list with right cross will come                           │
 │ ✗ 10 Minute Quran (0/1 task)                            │
 │ ✓ English Practice (2/2 tasks)                          │
 │ ✗ Gym Workout (0/3 tasks)                               │

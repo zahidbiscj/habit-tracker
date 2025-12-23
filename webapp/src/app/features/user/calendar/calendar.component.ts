@@ -312,6 +312,16 @@ export class CalendarComponent implements OnInit {
     return this.selectedDate.toLocaleDateString('en-US', options);
   }
 
+  getTodayDisplay(): string {
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    };
+    return today.toLocaleDateString('en-US', options);
+  }
+
   getEmptyDaysStart(): number[] {
     const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
     return Array(firstDay.getDay()).fill(0);
@@ -340,6 +350,25 @@ export class CalendarComponent implements OnInit {
     const total = this.selectedDayGoals.reduce((sum, g) => sum + g.totalTasks, 0);
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
+  }
+
+  getTasksForGoal(goalId: string): GoalTaskItem[] {
+    const accordion = this.selectedDayAccordions.find(acc => acc.goal.id === goalId);
+    return accordion ? accordion.tasks : [];
+  }
+
+  getMonthCompletionPercentage(): number {
+    const total = this.monthDays.reduce((sum, day) => sum + day.totalTasks, 0);
+    const completed = this.monthDays.reduce((sum, day) => sum + day.completedTasks, 0);
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  }
+
+  getMonthTotalTasks(): number {
+    return this.monthDays.reduce((sum, day) => sum + day.totalTasks, 0);
+  }
+
+  getMonthCompletedTasks(): number {
+    return this.monthDays.reduce((sum, day) => sum + day.completedTasks, 0);
   }
 
   private isGoalActiveOnDate(goal: Goal, date: Date): boolean {

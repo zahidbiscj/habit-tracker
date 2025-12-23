@@ -63,7 +63,7 @@ export class BrowserNotificationService {
           console.log('✅ User granted notification permission!');
         } else if (permission === 'denied') {
           console.warn('❌ User denied notification permission');
-          alert('⚠️ You blocked notifications!\n\nTo enable:\n1. Click the 🔒 lock icon in address bar\n2. Go to Site Settings\n3. Change Notifications to "Allow"\n4. Refresh the page');
+          // alert('⚠️ You blocked notifications!\n\nTo enable:\n1. Click the 🔒 lock icon in address bar\n2. Go to Site Settings\n3. Change Notifications to "Allow"\n4. Refresh the page');
         }
         
         return permission;

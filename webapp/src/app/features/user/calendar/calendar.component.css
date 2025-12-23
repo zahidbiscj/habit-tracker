@@ -6,21 +6,46 @@
 
 .calendar-header {
   display: flex;
+  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  gap: 1rem;
-  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  gap: 0.25rem;
 }
 
-.calendar-header h2 {
+.month-title {
   font-size: 1.75rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+  min-width: 200px;
+  text-align: center;
 }
 
-.btn-nav,
+.btn-nav {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-nav:hover {
+  background: #f9fafb;
+  border-color: #667eea;
+}
+
+.nav-icon {
+  font-size: 1.25rem;
+  color: #374151;
+  font-weight: bold;
+}
+
 .btn-today {
   padding: 0.625rem 1.25rem;
   border: none;
@@ -28,6 +53,8 @@
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.2s;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .btn-nav {
@@ -43,6 +70,67 @@
 .btn-nav:hover,
 .btn-today:hover {
   opacity: 0.9;
+}
+
+.today-display {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Month Summary Card */
+.month-summary {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.summary-header h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.summary-percentage {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.summary-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  white-space: nowrap;
 }
 
 .loading-spinner,
@@ -214,6 +302,97 @@
   margin-bottom: 1.5rem;
 }
 
+/* Goals accordion in daily summary */
+.goals-accordion-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.goal-accordion-item {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: white;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.goal-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  cursor: pointer;
+  background: white;
+  border: none;
+  transition: background-color 0.2s ease;
+  list-style: none;
+  margin: 0;
+}
+
+.goal-summary:hover {
+  background: var(--gray-50);
+}
+
+.goal-summary::-webkit-details-marker {
+  display: none;
+}
+
+.status-icon {
+  font-weight: bold;
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.goal-name {
+  font-weight: 600;
+  flex: 1;
+  color: var(--gray-900);
+}
+
+.task-count {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  margin-right: 0.75rem;
+}
+
+.expand-icon {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  transition: transform 0.2s ease;
+}
+
+.goal-accordion-item[open] .expand-icon {
+  transform: rotate(180deg);
+}
+
+.goal-tasks-list {
+  padding: 0;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-status {
+  margin-right: 0.75rem;
+  font-size: 1rem;
+}
+
+.task-name {
+  font-size: 0.9rem;
+  color: var(--gray-800);
+}
+
 .goal-completion-list {
   display: flex;
   flex-direction: column;
@@ -374,19 +553,8 @@
   }
 
   .calendar-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .calendar-header h2 {
-    order: -1;
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-
-  .btn-nav,
-  .btn-today {
-    width: 100%;
+    flex-direction: row;
+    align-items: center;
   }
 
   .calendar-grid {

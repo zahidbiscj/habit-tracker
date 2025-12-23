@@ -1,122 +1,132 @@
 <div class="calendar-container">
-  <div class="calendar-header">
-    <button class="btn-nav" (click)="previousMonth()">← Prev Month</button>
-    <h2>{{ getMonthYearDisplay() }}</h2>
-    <button class="btn-nav" (click)="nextMonth()">Next Month →</button>
-    <button class="btn-today" (click)="goToToday()">Today</button>
-  </div>
-
-  <div class="loading-spinner" *ngIf="loading">
-    <p>Loading calendar...</p>
-  </div>
-
-  <div class="calendar-grid-container card" *ngIf="!loading">
-    <div class="calendar-grid">
-      <!-- Day headers -->
-      <div class="day-header" *ngFor="let dayName of dayNames">
-        {{ dayName }}
-      </div>
-
-      <!-- Empty cells before first day of month -->
-      <div class="day-empty" *ngFor="let _ of getEmptyDaysStart()"></div>
-
-      <!-- Days of month -->
-      <div 
-        *ngFor="let dayData of monthDays"
-        class="day-cell"
-        [class.today]="isToday(dayData.date)"
-        [class.selected]="isSelectedDate(dayData.date)"
-        [ngClass]="getColorClass(dayData.color)"
-        (click)="selectDay(dayData)"
-      >
-        <div class="day-number">{{ dayData.date.getDate() }}</div>
-        <div class="day-percentage" *ngIf="dayData.totalTasks > 0">
-          {{ dayData.percentage }}%
-        </div>
-        <div class="day-indicator" *ngIf="dayData.totalTasks > 0">
-          <span class="indicator-dot" [ngClass]="getColorClass(dayData.color)"></span>
-        </div>
-        <div class="day-no-data" *ngIf="dayData.totalTasks === 0">--</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="selected-day-details">
-    <h3>{{ getSelectedDateDisplay() }}</h3>
-
-    <div class="loading-spinner-small" *ngIf="selectedDayLoading">
-      <p>Loading details...</p>
+    <div class="loading-spinner" *ngIf="loading">
+        <p>Loading calendar...</p>
     </div>
 
-    <div *ngIf="!selectedDayLoading">
-      <div class="daily-summary" *ngIf="selectedDayGoals.length > 0">
-        <h4>Daily Habits Completion:</h4>
-        
-        <div class="goal-completion-list">
-          <div class="goal-item" *ngFor="let goalData of selectedDayGoals">
-            <span class="status-icon">
-              {{ goalData.completedTasks === goalData.totalTasks ? '✓' : '✗' }}
-            </span>
-            <span class="goal-name">{{ goalData.goal.name }}</span>
-            <span class="task-count">({{ goalData.completedTasks }}/{{ goalData.totalTasks }} tasks)</span>
-          </div>
+    <!-- Month Summary Card -->
+    <div class="month-summary card" *ngIf="!loading">
+        <div class="summary-header">
+            <h4>{{ getMonthYearDisplay() }} Overview</h4>
+            <div class="summary-percentage">{{ getMonthCompletionPercentage() }}%</div>
         </div>
-
-        <div class="overall-completion">
-          <strong>Overall:</strong> 
-          {{ getTotalCompletionForSelectedDay().completed }}/{{ getTotalCompletionForSelectedDay().total }} tasks completed 
-          ({{ getTotalCompletionForSelectedDay().percentage }}%)
+        <div class="summary-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getMonthCompletionPercentage()"></div>
+            </div>
+            <span class="progress-text">{{ getMonthCompletedTasks() }}/{{ getMonthTotalTasks() }} tasks</span>
         </div>
-      </div>
-
-      <div class="empty-state" *ngIf="selectedDayGoals.length === 0">
-        <p>No goals assigned yet.</p>
-      </div>
-
-      <!-- Compact Tasks Accordion under goals -->
-      <div class="goal-accordion" *ngIf="selectedDayAccordions.length > 0">
-        <h4>Tasks by Goal</h4>
-        <div class="accordion-list">
-          <details class="accordion-item" *ngFor="let acc of selectedDayAccordions">
-            <summary>
-              <span class="summary-name">{{ acc.goal.name }}</span>
-              <span class="summary-count">{{ acc.completedTasks }}/{{ acc.totalTasks }}</span>
-            </summary>
-            <ul class="task-list">
-              <li class="task-row" *ngFor="let item of acc.tasks">
-                <span class="task-icon">{{ item.completed ? '☑' : '☐' }}</span>
-                <span class="task-name">{{ item.task.name }}</span>
-              </li>
-            </ul>
-          </details>
-        </div>
-      </div>
-
-      <div class="legend">
-        <h4>Legend:</h4>
-        <div class="legend-items">
-          <div class="legend-item">
-            <span class="legend-dot day-green"></span>
-            <span>80-100% completed</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot day-yellow"></span>
-            <span>60-79% completed</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot day-orange"></span>
-            <span>40-59% completed</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot day-red"></span>
-            <span>0-39% completed</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot day-gray"></span>
-            <span>No data</span>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
+
+      <div class="calendar-header">
+        <button class="btn-nav" (click)="previousMonth()">
+            <span class="nav-icon">←</span>
+        </button>
+        <div class="today-display">{{ getTodayDisplay() }}</div>
+        <button class="btn-nav" (click)="nextMonth()">
+            <span class="nav-icon">→</span>
+        </button>
+        <button class="btn-today" (click)="goToToday()">Go to Today</button>
+    </div>
+
+    <div class="calendar-grid-container card" *ngIf="!loading">
+        <div class="calendar-grid">
+            <!-- Day headers -->
+            <div class="day-header" *ngFor="let dayName of dayNames">
+                {{ dayName }}
+            </div>
+
+            <!-- Empty cells before first day of month -->
+            <div class="day-empty" *ngFor="let _ of getEmptyDaysStart()"></div>
+
+            <!-- Days of month -->
+            <div *ngFor="let dayData of monthDays" class="day-cell" [class.today]="isToday(dayData.date)"
+                [class.selected]="isSelectedDate(dayData.date)" [ngClass]="getColorClass(dayData.color)"
+                (click)="selectDay(dayData)">
+                <div class="day-number">{{ dayData.date.getDate() }}</div>
+                <div class="day-percentage" *ngIf="dayData.totalTasks > 0">
+                    {{ dayData.percentage }}%
+                </div>
+                <div class="day-indicator" *ngIf="dayData.totalTasks > 0">
+                    <span class="indicator-dot" [ngClass]="getColorClass(dayData.color)"></span>
+                </div>
+                <div class="day-no-data" *ngIf="dayData.totalTasks === 0">--</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="selected-day-details">
+        <h3>{{ getSelectedDateDisplay() }}</h3>
+
+        <div class="loading-spinner-small" *ngIf="selectedDayLoading">
+            <p>Loading details...</p>
+        </div>
+
+        <div *ngIf="!selectedDayLoading">
+            <div class="daily-summary" *ngIf="selectedDayGoals.length > 0">
+                <h4>Daily Habits Completion:</h4>
+
+                <div class="goals-accordion-list">
+                    <details class="goal-accordion-item" *ngFor="let goalData of selectedDayGoals">
+                        <summary class="goal-summary">
+                            <span class="status-icon">
+                                {{ goalData.completedTasks === goalData.totalTasks ? '✓' : '✗' }}
+                            </span>
+                            <span class="goal-name">{{ goalData.goal.name }}</span>
+                            <span class="task-count">({{ goalData.completedTasks }}/{{ goalData.totalTasks }}
+                                tasks)</span>
+                            <span class="expand-icon">▼</span>
+                        </summary>
+                        <div class="goal-tasks-list">
+                            <div class="task-item" *ngFor="let taskItem of getTasksForGoal(goalData.goal.id)">
+                                <span class="task-status">{{ taskItem.completed ? '☑' : '☐' }}</span>
+                                <span class="task-name">{{ taskItem.task.name }}</span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="overall-completion">
+                    <strong>Overall:</strong>
+                    {{ getTotalCompletionForSelectedDay().completed }}/{{ getTotalCompletionForSelectedDay().total }}
+                    tasks completed
+                    ({{ getTotalCompletionForSelectedDay().percentage }}%)
+                </div>
+            </div>
+
+            <div class="empty-state" *ngIf="selectedDayGoals.length === 0">
+                <p>No goals assigned yet.</p>
+            </div>
+
+            <!-- Compact Tasks Accordion under goals -->
+            <div class="goal-accordion" *ngIf="false">
+                <!-- Removed: Now integrated into Daily Habits Completion above -->
+            </div>
+
+            <div class="legend">
+                <h4>Legend:</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-dot day-green"></span>
+                        <span>80-100% completed</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot day-yellow"></span>
+                        <span>60-79% completed</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot day-orange"></span>
+                        <span>40-59% completed</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot day-red"></span>
+                        <span>0-39% completed</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot day-gray"></span>
+                        <span>No data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
