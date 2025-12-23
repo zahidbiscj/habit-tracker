@@ -51,6 +51,12 @@ export class CalendarComponent implements OnInit {
   loading = false;
   selectedDayLoading = false;
 
+  // Store month-level data for accurate calculations
+  private monthTaskIds: string[] = [];
+  private monthDailyLogs: DailyLog[] = [];
+  private monthGoals: Goal[] = [];
+  private monthAllTasks: Task[] = [];
+
   monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
   dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -90,6 +96,10 @@ export class CalendarComponent implements OnInit {
         const goalIds = assignments.map(a => a.goalId);
 
         if (goalIds.length === 0) {
+          this.monthTaskIds = [];
+          this.monthDailyLogs = [];
+          this.monthGoals = [];
+          this.monthAllTasks = [];
           this.monthDays = days.map(date => ({
             date,
             completedTasks: 0,
@@ -111,6 +121,11 @@ export class CalendarComponent implements OnInit {
                 const allTasks: Task[] = tasksArrays.flat();
                 const taskIds = allTasks.map(t => t.id);
 
+                // Store for month-level calculations
+                this.monthGoals = goals;
+                this.monthAllTasks = allTasks;
+                this.monthTaskIds = taskIds;
+
                 // Get aggregated daily logs for the month
                 this.dailyLogService.getDailyLogsByUserAndDateRange(
                   this.currentUserId,
@@ -118,6 +133,9 @@ export class CalendarComponent implements OnInit {
                   lastDay
                 ).subscribe({
                   next: (dailyLogs) => {
+                    // Store for month-level calculations
+                    this.monthDailyLogs = dailyLogs;
+                    
                     this.monthDays = days.map(date => this.calculateDayCompletion(date, taskIds, dailyLogs));
                     this.loading = false;
                   },
@@ -146,13 +164,23 @@ export class CalendarComponent implements OnInit {
     });
   }
 
-  calculateDayCompletion(date: Date, taskIds: string[], logs: DailyLog[]): DayCompletion {
-    // Use composite ID format for reliable matching
+  calculateDayCompletion(date: Date, _taskIds: string[], logs: DailyLog[]): DayCompletion {
+    // Find which goals are active on this day
+    const activeGoals = this.monthGoals.filter(g => this.isGoalActiveOnDate(g, date));
+    // For each active goal, get its tasks
+    const tasksForDay = this.monthAllTasks.filter(t => activeGoals.some(g => g.id === t.goalId) && t.active);
+    const totalTasks = tasksForDay.length;
+
+    // Find the log for this day
     const expectedLogId = this.generateDailyLogId(this.currentUserId, date);
     const dayLog = logs.find(log => log.id === expectedLogId);
-
-    const totalTasks = taskIds.length;
-    const completedTasks = dayLog ? dayLog.tasks.filter(e => e.value && taskIds.includes(e.taskId)).length : 0;
+    let completedTasks = 0;
+    if (dayLog) {
+      completedTasks = tasksForDay.filter(task => {
+        const entry = dayLog.tasks.find(e => e.taskId === task.id);
+        return entry && entry.value;
+      }).length;
+    }
     const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     let color = 'gray';
@@ -162,7 +190,6 @@ export class CalendarComponent implements OnInit {
       else if (percentage >= 40) color = 'orange';
       else color = 'red';
     }
-
     return { date, completedTasks, totalTasks, percentage, color };
   }
 
@@ -358,17 +385,73 @@ export class CalendarComponent implements OnInit {
   }
 
   getMonthCompletionPercentage(): number {
-    const total = this.monthDays.reduce((sum, day) => sum + day.totalTasks, 0);
-    const completed = this.monthDays.reduce((sum, day) => sum + day.completedTasks, 0);
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
+    // For month overview, we need unique task counts, not sum of daily totals
+    const uniqueTasks = this.getUniqueTasksInMonth();
+    if (uniqueTasks.total === 0) return 0;
+    return Math.round((uniqueTasks.completed / uniqueTasks.total) * 100);
   }
 
   getMonthTotalTasks(): number {
-    return this.monthDays.reduce((sum, day) => sum + day.totalTasks, 0);
+    // Count unique tasks in the month, not sum of daily totals
+    return this.getUniqueTasksInMonth().total;
   }
 
   getMonthCompletedTasks(): number {
-    return this.monthDays.reduce((sum, day) => sum + day.completedTasks, 0);
+    // Count unique tasks completed at least once in the month
+    return this.getUniqueTasksInMonth().completed;
+  }
+
+  private getUniqueTasksInMonth(): { total: number; completed: number } {
+    // Sum all tasks assigned per day up to today (not unique, but total workload)
+    // Based on which goals are active on each specific day
+    
+    if (this.monthGoals.length === 0 || this.monthAllTasks.length === 0) {
+      return { total: 0, completed: 0 };
+    }
+
+    const today = new Date();
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    let totalAssignedTasks = 0;
+    let totalCompletedTasks = 0;
+
+    // Iterate through each day of the month up to today
+    for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
+      const currentDayDate = new Date(year, month, day);
+      
+      // Only count days up to today
+      if (currentDayDate > today) {
+        break;
+      }
+
+      // Find which goals are active on this specific day
+      const activeGoalsForDay = this.monthGoals.filter(g => this.isGoalActiveOnDate(g, currentDayDate));
+      
+      // For each active goal, count its tasks as assigned for this day
+      activeGoalsForDay.forEach(goal => {
+        const tasksForGoal = this.monthAllTasks.filter(t => t.goalId === goal.id && t.active);
+        totalAssignedTasks += tasksForGoal.length;
+        
+        // Check daily log for this day to count completed tasks
+        const dayLogId = this.generateDailyLogId(this.currentUserId, currentDayDate);
+        const dayLog = this.monthDailyLogs.find(log => log.id === dayLogId);
+        
+        if (dayLog) {
+          tasksForGoal.forEach(task => {
+            const taskEntry = dayLog.tasks.find(e => e.taskId === task.id);
+            if (taskEntry && taskEntry.value) {
+              totalCompletedTasks++;
+            }
+          });
+        }
+      });
+    }
+
+    return {
+      total: totalAssignedTasks,
+      completed: totalCompletedTasks
+    };
   }
 
   private isGoalActiveOnDate(goal: Goal, date: Date): boolean {

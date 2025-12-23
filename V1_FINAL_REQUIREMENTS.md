@@ -51,11 +51,50 @@ providers: [
 ```
 
 ### Benefits
-- You can switch from Firebase to Supabase, REST API, or any other backend by:
   - Implementing the service interfaces for the new provider
   - Changing the provider in Angular’s DI
-- UI and business logic remain unchanged
-- Easier testing, maintenance, and future-proofing
+
+---
+
+## 📅 Calendar & Dashboard UI (How It Looks & What It Does)
+
+### Calendar (User View)
+```
+┌──────────────────────────────────────────────┐
+│ December 2025                               │
+├──────────────────────────────────────────────┤
+│ Su Mo Tu We Th Fr Sa                        │
+│  1  2  3  4  5  6  7                        │
+│  8  9 10 11 12 13 14                        │
+│ 15 16 17 18 19 20 21                        │
+│ 22 23 24 25 26 27 28                        │
+│ 29 30 31                                    │
+├──────────────────────────────────────────────┤
+│ [Day cell: shows % complete, color, click → daily log]
+└──────────────────────────────────────────────┘
+```
+**What it does:**
+- Shows a monthly grid with each day as a cell.
+- Each cell displays the % of tasks completed for that day (for the current user).
+- Clicking a day opens the daily log for that date.
+- Header shows the month and navigation arrows.
+
+### Dashboard (User Overview)
+```
+┌──────────────────────────────────────────────┐
+│ December 2025 Overview                      │
+├──────────────────────────────────────────────┤
+│ 13/15 tasks completed (87%)                 │
+│ [Progress bar]                              │
+│ [List of goals and completion %]            │
+└──────────────────────────────────────────────┘
+```
+**What it does:**
+- Shows a summary for the current month up to today.
+- Displays total tasks assigned and completed for the user.
+- Shows a progress bar and a breakdown by goal.
+
+---
 
 ---
 ---
@@ -274,6 +313,18 @@ db.collection('dailyLogs')
 - ✅ Month/Year/Week fields for optimized range queries (no date range scans)
 - ✅ Seamless mapping to Excel format (tasks array = daily columns)
 
+**Monthly Aggregation Calculations (Calendar Overview):**
+- For a month review (e.g., "December 2025 Overview"), show: **total tasks assigned up to today** and **total completed**.
+- For each day from month start to today:
+  - For each goal active on that day (goal.startDate <= day <= goal.endDate), count all its tasks as assigned for that day.
+  - Sum all assigned tasks for all days up to today (not future days).
+  - Sum all completed tasks (where user marked value=true) for those days.
+- **Display:**
+  - "December 2025 Overview: 13/15 tasks completed (87%)"
+  - Where 13 = total completed tasks (across all days so far), 15 = total assigned tasks (across all days so far), 87% = (13/15)*100
+- Example: If 21st Dec = 2 tasks, 22nd Dec = 3 tasks, 23rd Dec = 10 tasks, then for Dec 1-23: total assigned = 2+3+10=15, completed = sum of all completed in those days.
+- This ensures the review reflects actual workload and progress, not just unique task IDs.
+
 ### Notification
 | Field        | Type      | Description                                    |
 |--------------|-----------|------------------------------------------------|
@@ -491,7 +542,7 @@ db.collection('dailyLogs')
   - **Row 4 onwards**: Goal and Task data
     - Column 1: Goal name (merged cells for all tasks of same goal)
     - Column 2: Task name
-    - Columns 3+: Checkboxes for each day (☑️ = Completed, ☐ = Not Completed, Empty = Not Filled)
+    - Columns 3+: Checkboxes for each day (☑️ = Completed, ☐ = Not Completed, Empty = No entry filled)
   - **Checkbox Values**: 
     - ☑️ (Checked) = TRUE = Yes/Completed
     - ☐ (Unchecked) = FALSE = No/Not Completed
@@ -655,7 +706,7 @@ Goal,Task,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALS
 ,quran poro,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
 ,quran shikho,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
 On Time Salah,Fajr Prayer,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
-,Dhuhr Prayer,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Dhuhr Prayer,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Asr Prayer,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Maghrib Prayer,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Isha Prayer,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
@@ -729,10 +780,6 @@ SCENARIO B: Goal Exists, New Tasks
    └─ Result: Skip goal creation, create only Tahajjud task, import logs for all tasks
 
 SCENARIO C: Duplicate Detection
-└─ "On Time Salah" (exists in system) imported again
-   └─ Result: Skip goal creation, skip task creation, merge logs only
-
-SCENARIO D: Similar Goal Names (typo)
 └─ "On Time Salah" exists, import has "On Time Salat" (typo)
    └─ Result: Flag as potential duplicate, show warning in preview
    └─ Admin can choose: Create as new or merge with existing
@@ -777,7 +824,7 @@ SCENARIO D: Similar Goal Names (typo)
     "willSkip": 4
   },
   "dailyLogsAnalysis": {
-    "totalEntries": 1023,
+    "totalEntries": 1,023,
     "willCreate": 945,
     "willUpdate": 78
   },
@@ -990,7 +1037,7 @@ Steps:
 ,,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday
 Goal,Task,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 On Time Salah,Fajr Prayer,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
-,Dhuhr Prayer,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Dhuhr Prayer,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Asr Prayer,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Maghrib Prayer,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
 ,Isha Prayer,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
@@ -1054,7 +1101,7 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 **UI**:
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ ← Cancel | Create New Goal                   [Save]     │
+│  Create New Goal                   [Save]     │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │ 📅 Select Goal Period                                   │
@@ -1294,10 +1341,6 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 10. Admin is redirected to Goals List page
 11. Success message: "Goal updated successfully!"
 
-**Note**: Calendar does not highlight date ranges; admin clicks dates to select new range if needed
-
-**Note**: If admin removes a task that has existing DailyLog entries, those entries remain in the database (for historical tracking) but are no longer shown to users.
-
 ---
 
 ### 4. Notifications List Page
@@ -1520,7 +1563,7 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 │                                                          │
 │ Month: [📅 December 2025 ▼]                            │
 │ Wednesday, December 18, 2025                            │
-│ < Previous Day | Today | Next Day >                     │
+│ < Previous Day | Today | Next Day                     │
 │                                                          │
 │ ┌────────────────────────┐ ┌────────────────────────┐  │
 │ │ 🕌 On Time Salah       │ │ 📖 10 Minute Quran     │  │
@@ -1552,6 +1595,7 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 - "Today: X/Y completed" = Task completion count
 - "Today: Completed" = All tasks done
 - "Today: Not filled" = No entry yet
+- "X/Y tasks completed (Z%)" = Monthly overview on calendar
 
 **Month Selector Behavior**:
 - **Current Month (Default)**: Shows only goals where current date is between startDate and endDate
@@ -1643,9 +1687,17 @@ dailyLogs.where('userId', '==', currentUserId)
 │                                                    │
 │ 📊 Summary: 4 goals, 11 tasks                     │
 │                                                    │
-│        [Cancel]         [Save All Entries]        │
+│ ✓ On Time Salah (3/5 tasks)- Accordion on/off when clicked in the goal. tasks list with right cross will come                           │
+│ ✗ 10 Minute Quran (0/1 task)                            │
+│ ✓ English Practice (2/2 tasks)                          │
+│ ✗ Gym Workout (0/3 tasks)                               │
 │                                                    │
-└───────────────────────────────────────────────────┘
+│ Overall: 5/11 tasks completed (45%)                     │
+│                                                    │
+│ Legend:                                                 │
+│ 🟢 80-100% | 🟡 60-79% | 🟠 40-59% | ⚪ No data         │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
 ```
 
 **Features**:
@@ -2055,6 +2107,8 @@ Render Calendar Grid
    - Dates are stored in Asia/Dhaka timezone (UTC+6)
    - Start Date cannot be in the past
    - End Date must be after Start Date
+   - Tasks must have at least one user assigned
+   - Goals must have at least one task
    - Users can backfill or edit entries for ANY past date (no time limit)
    - **Dashboard (current month)**: Only shows goals where today's date is between startDate and endDate
    - **Dashboard (past/future month selected)**: Shows all goals with any overlap in that month
@@ -2430,4 +2484,4 @@ This is a complete, production-ready specification for Habit Tracker V1 with:
 **Total Database Collections**: 6 (User, Goal, Task, GoalAssignment, DailyLog, Notification)  
 **Estimated Development Time**: 2-3 weeks for a solo developer  
 **Zero-Cost Hosting**: Firebase Free Tier (Firestore, Auth, Hosting, Cloud Functions, FCM)  
-**First Admin Setup**: First user registers as 'user', manually promote to 'admin' via Firebase Console
+**First Admin Setup**: First user registers as 'user', manually promote to 'admin' via Firebase Console or admin panel (future feature)
