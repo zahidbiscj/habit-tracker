@@ -92,30 +92,31 @@ export class UserDashboardComponent implements OnInit {
               next: (results) => {
                 console.log('Loaded goals and tasks:', results);
                 
-                // Get logs for selected date to calculate completion
-                this.dailyLogService.getLogsByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
-                  next: (logs) => {
-                    console.log('Loaded daily logs:', logs);
+                // Get aggregated daily log for selected date to calculate completion
+                this.dailyLogService.getDailyLogByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
+                  next: (dailyLog) => {
+                    console.log('Loaded aggregated daily log:', dailyLog);
+                    const tasksEntries = dailyLog?.tasks || [];
                     this.goalsWithTasks = results.map(result => {
-                  const taskIds = result.tasks.map(t => t.id);
-                  const logsForGoal = logs.filter(log => taskIds.includes(log.taskId));
-                  const completedCount = logsForGoal.filter(log => log.value).length;
-                  const totalTasks = result.tasks.length;
-                  const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-                  const completedToday = logsForGoal.length === totalTasks;
+                      const goalTaskIds = new Set(result.tasks.map(t => t.id));
+                      const entriesForGoal = tasksEntries.filter(e => goalTaskIds.has(e.taskId));
+                      const completedCount = entriesForGoal.filter(e => !!e.value).length;
+                      const totalTasks = result.tasks.length;
+                      const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+                      const completedToday = completedCount === totalTasks && totalTasks > 0;
 
-                  return {
-                    goal: result.goal,
-                    tasks: result.tasks,
-                    completionPercentage: percentage,
-                    completedToday,
-                    completedCount: completedCount
-                  };
-                });
-                
-                console.log('Final goalsWithTasks:', this.goalsWithTasks);
-                this.loading = false;
-              },
+                      return {
+                        goal: result.goal,
+                        tasks: result.tasks,
+                        completionPercentage: percentage,
+                        completedToday,
+                        completedCount
+                      };
+                    });
+
+                    console.log('Final goalsWithTasks:', this.goalsWithTasks);
+                    this.loading = false;
+                  },
               error: (error) => {
                 console.error('Error loading logs:', error);
                 this.loading = false;

@@ -3,7 +3,6 @@
         <div class="dashboard-content">
             <!-- Date Controls: Row 1 (Month/Year) -->
             <div class="date-row-top">
-                <label class="month-label">Select Month:</label>
                 <select [(ngModel)]="selectedMonth" (change)="onMonthChange()" class="month-dropdown">
                     <option *ngFor="let month of months; let i = index" [value]="i">
                         {{ month }}

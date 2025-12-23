@@ -4,20 +4,24 @@
 }
 
 :host ::ng-deep .p-button {
-  font-size: 1rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  font-size: var(--btn-font-size);
+  height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
+  transition: all 0.2s ease;
 }
 
+/* Normalize size variants to global standard */
 :host ::ng-deep .p-button.p-button-sm {
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
+  font-size: var(--btn-font-size);
+  height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
 }
 
 :host ::ng-deep .p-button.p-button-lg {
-  font-size: 1.125rem;
-  padding: 1rem 2rem;
+  font-size: var(--btn-font-size);
+  height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
 }
 
 :host ::ng-deep .p-button:focus {

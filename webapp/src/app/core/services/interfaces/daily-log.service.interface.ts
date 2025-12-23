@@ -1,61 +1,40 @@
 import { Observable } from 'rxjs';
-import { DailyLog } from '../../models/daily-log.model';
+import { DailyLog, DailyTaskEntry } from '../../models/daily-log.model';
 
 /**
  * Provider-agnostic Daily Log Service Interface
  */
 export interface IDailyLogService {
-  /**
-   * Get log by ID
-   */
+  /** Get aggregated daily log by composite ID */
   getLogById(logId: string): Observable<DailyLog | null>;
 
-  /**
-   * Get logs for a user on a specific date
-   */
-  getLogsByUserAndDate(userId: string, date: Date): Observable<DailyLog[]>;
+  /** Get aggregated daily log for a user and date */
+  getDailyLogByUserAndDate(userId: string, date: Date): Observable<DailyLog | null>;
 
-  /**
-   * Get logs for a user within a date range
-   */
-  getLogsByUserAndDateRange(userId: string, startDate: Date, endDate: Date): Observable<DailyLog[]>;
+  /** Get aggregated daily logs for a user within a date range */
+  getDailyLogsByUserAndDateRange(userId: string, startDate: Date, endDate: Date): Observable<DailyLog[]>;
 
-  /**
-   * Get log for a specific user, task, and date
-   */
-  getLogByUserTaskDate(userId: string, taskId: string, date: Date): Observable<DailyLog | null>;
+  /** Get aggregated daily logs for a user and month (YYYY-MM) */
+  getDailyLogsByUserAndMonth(userId: string, month: string): Observable<DailyLog[]>;
 
-  /**
-   * Create a new log
-   */
-  createLog(log: DailyLog): Observable<DailyLog>;
+  /** Upsert single task entry into a user's daily log (creates log if missing) */
+  upsertTaskEntry(userId: string, date: Date, entry: DailyTaskEntry): Observable<DailyLog>;
 
-  /**
-   * Create multiple logs (batch)
-   */
-  createLogs(logs: DailyLog[]): Observable<DailyLog[]>;
+  /** Upsert multiple task entries (batch) */
+  upsertTaskEntries(userId: string, date: Date, entries: DailyTaskEntry[]): Observable<DailyLog>;
 
-  /**
-   * Update an existing log
-   */
-  updateLog(log: DailyLog): Observable<void>;
+  /** Replace entire daily log (merge tasks and recompute aggregates) */
+  upsertDailyLog(log: DailyLog): Observable<DailyLog>;
 
-  /**
-   * Update or create log (upsert)
-   */
-  upsertLog(log: DailyLog): Observable<DailyLog>;
-
-  /**
-   * Delete a log (soft delete - set active=false)
-   */
+  /** Soft delete a daily log */
   deleteLog(logId: string): Observable<void>;
 
-  /**
-   * Get completion statistics for a user
-   */
+  /** Completion statistics for a user within date range */
   getCompletionStats(userId: string, startDate: Date, endDate: Date): Observable<{
-    totalTasks: number;
-    completedTasks: number;
-    percentage: number;
+    totalDays: number;
+    avgCompletionRate: number;
+    fullyCompletedDays: number;
+    partiallyCompletedDays: number;
+    pendingDays: number;
   }>;
 }

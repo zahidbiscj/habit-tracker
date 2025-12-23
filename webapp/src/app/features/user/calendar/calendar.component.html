@@ -73,6 +73,25 @@
         <p>No goals assigned yet.</p>
       </div>
 
+      <!-- Compact Tasks Accordion under goals -->
+      <div class="goal-accordion" *ngIf="selectedDayAccordions.length > 0">
+        <h4>Tasks by Goal</h4>
+        <div class="accordion-list">
+          <details class="accordion-item" *ngFor="let acc of selectedDayAccordions">
+            <summary>
+              <span class="summary-name">{{ acc.goal.name }}</span>
+              <span class="summary-count">{{ acc.completedTasks }}/{{ acc.totalTasks }}</span>
+            </summary>
+            <ul class="task-list">
+              <li class="task-row" *ngFor="let item of acc.tasks">
+                <span class="task-icon">{{ item.completed ? '☑' : '☐' }}</span>
+                <span class="task-name">{{ item.task.name }}</span>
+              </li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
       <div class="legend">
         <h4>Legend:</h4>
         <div class="legend-items">

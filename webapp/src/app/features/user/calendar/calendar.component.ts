@@ -24,6 +24,18 @@ interface GoalWithCompletion {
   totalTasks: number;
 }
 
+interface GoalTaskItem {
+  task: Task;
+  completed: boolean;
+}
+
+interface GoalAccordion {
+  goal: Goal;
+  tasks: GoalTaskItem[];
+  completedTasks: number;
+  totalTasks: number;
+}
+
 @Component({
   selector: 'app-calendar',
   templateUrl: './calendar.component.html',
@@ -35,6 +47,7 @@ export class CalendarComponent implements OnInit {
   selectedDate = new Date();
   monthDays: DayCompletion[] = [];
   selectedDayGoals: GoalWithCompletion[] = [];
+  selectedDayAccordions: GoalAccordion[] = [];
   loading = false;
   selectedDayLoading = false;
 
@@ -98,14 +111,14 @@ export class CalendarComponent implements OnInit {
                 const allTasks: Task[] = tasksArrays.flat();
                 const taskIds = allTasks.map(t => t.id);
 
-                // Get all daily logs for the month
-                this.dailyLogService.getLogsForUserInDateRange(
+                // Get aggregated daily logs for the month
+                this.dailyLogService.getDailyLogsByUserAndDateRange(
                   this.currentUserId,
                   firstDay,
                   lastDay
                 ).subscribe({
-                  next: (logs) => {
-                    this.monthDays = days.map(date => this.calculateDayCompletion(date, taskIds, logs));
+                  next: (dailyLogs) => {
+                    this.monthDays = days.map(date => this.calculateDayCompletion(date, taskIds, dailyLogs));
                     this.loading = false;
                   },
                   error: (error) => {
@@ -135,14 +148,14 @@ export class CalendarComponent implements OnInit {
 
   calculateDayCompletion(date: Date, taskIds: string[], logs: DailyLog[]): DayCompletion {
     const dateStr = this.formatDateYYYYMMDD(date);
-    const dayLogs = logs.filter(log => this.formatDateYYYYMMDD(log.date) === dateStr);
-    
-    const completedTasks = dayLogs.filter(log => log.value === true).length;
+    const dayLog = logs.find(log => this.formatDateYYYYMMDD(log.date) === dateStr);
+
     const totalTasks = taskIds.length;
+    const completedTasks = dayLog ? dayLog.tasks.filter(e => e.value && taskIds.includes(e.taskId)).length : 0;
     const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
+
     let color = 'gray';
-    if (dayLogs.length > 0) {
+    if (dayLog) {
       if (percentage >= 80) color = 'green';
       else if (percentage >= 60) color = 'yellow';
       else if (percentage >= 40) color = 'orange';
@@ -177,21 +190,31 @@ export class CalendarComponent implements OnInit {
               next: (goalsWithTasks) => {
                 const dateStr = this.formatDateYYYYMMDD(this.selectedDate);
                 
-                const logObservables = goalsWithTasks.map(gwt => 
-                  this.dailyLogService.getLogsForUserByDate(this.currentUserId, this.selectedDate).pipe(
-                    map(logs => ({
+                this.dailyLogService.getDailyLogByUserAndDate(this.currentUserId, this.selectedDate).subscribe({
+                  next: (dailyLog) => {
+                    const entries = dailyLog?.tasks || [];
+                    // Per-goal completion summary
+                    this.selectedDayGoals = goalsWithTasks.map(gwt => ({
                       goal: gwt.goal,
-                      completedTasks: logs.filter(log => 
-                        gwt.tasks.some(t => t.id === log.taskId) && log.value === true
-                      ).length,
+                      completedTasks: entries.filter(e => !!e.value && gwt.tasks.some(t => t.id === e.taskId)).length,
                       totalTasks: gwt.tasks.length
-                    }))
-                  )
-                );
-                
-                forkJoin(logObservables).subscribe({
-                  next: (results) => {
-                    this.selectedDayGoals = results;
+                    }));
+
+                    // Accordion details with compact tasks
+                    this.selectedDayAccordions = goalsWithTasks.map(gwt => {
+                      const tasks: GoalTaskItem[] = gwt.tasks.map(t => ({
+                        task: t,
+                        completed: !!entries.find(e => e.taskId === t.id && e.value)
+                      }));
+                      const completedTasks = tasks.filter(x => x.completed).length;
+                      return {
+                        goal: gwt.goal,
+                        tasks,
+                        completedTasks,
+                        totalTasks: tasks.length
+                      };
+                    });
+
                     this.selectedDayLoading = false;
                   },
                   error: (error) => {

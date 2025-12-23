@@ -236,6 +236,9 @@
   flex: 1;
   min-height: 100vh;
   background: #f8f9fa;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .topbar {
@@ -244,10 +247,10 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem; /* reduce padding globally */
 }
 
 .icon-btn {
@@ -299,7 +302,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 }
 

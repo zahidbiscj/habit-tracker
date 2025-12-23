@@ -1,4 +1,4 @@
-<div class="goals-list-container">
+<div class="goals-list-container compact">
   <ht-card 
     [title]="'Goals Management'" 
     [subtitle]="'Manage all goals and tasks'"
@@ -12,6 +12,7 @@
       </ht-button>
     </div>
 
+    <!-- Desktop/Tablet Table View -->
     <div class="table-container">
       <ht-table
         [data]="goals"
@@ -22,6 +23,39 @@
         [paginator]="true"
         [rows]="10">
       </ht-table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="mobile-cards" *ngIf="!loading">
+      <div class="goal-card" *ngFor="let goal of goals">
+        <div class="goal-card-header">
+          <div class="goal-title">{{ goal.name }}</div>
+          <span class="status-chip" [class.active]="goal.active" [class.inactive]="!goal.active">
+            {{ goal.active ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        <div class="goal-card-body">
+          <div class="goal-desc" *ngIf="goal.description">{{ goal.description }}</div>
+          <div class="goal-dates">
+            <span class="date-item">
+              <i class="pi pi-calendar"></i>
+              {{ formatDate(goal.startDate) }}
+            </span>
+            <span class="date-sep">→</span>
+            <span class="date-item">
+              <i class="pi pi-clock"></i>
+              {{ goal.endDate ? formatDate(goal.endDate) : 'Ongoing' }}
+            </span>
+          </div>
+        </div>
+        <div class="goal-card-actions">
+          <ht-button [label]="'Edit'" [icon]="'pi pi-pencil'" [severity]="'info'" (onClick)="editGoal(goal)"></ht-button>
+          <ht-button [label]="'Delete'" [icon]="'pi pi-trash'" [severity]="'danger'" (onClick)="deleteGoal(goal)"></ht-button>
+        </div>
+      </div>
+      <div class="empty-mobile" *ngIf="goals.length === 0">
+        No goals found.
+      </div>
     </div>
   </ht-card>
 </div>

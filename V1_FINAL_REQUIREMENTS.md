@@ -135,21 +135,144 @@ A simple habit tracking web application where admins create goals/tasks and user
 
 **Primary Key**: (goalId, userId)
 
-### DailyLog
-| Field        | Type      | Description                          |
-|--------------|-----------|--------------------------------------|
-| id           | string    | Unique log entry ID                  |
-| date         | date      | Date of the log entry (YYYY-MM-DD)   |
-| taskId       | string    | Foreign key to Task                  |
-| userId       | string    | Foreign key to User                  |
-| value        | boolean   | Yes (true) or No (false)             |
-| active       | boolean   | Whether log entry is active          |
-| createdDate  | timestamp | When log was created                 |
-| updatedDate  | timestamp | Last update timestamp                |
-| createdBy    | string    | User ID who created this log         |
-| updatedBy    | string    | User ID who last updated this log    |
+### DailyLog (OPTIMIZED FOR FAST QUERIES)
+| Field              | Type      | Description                                          |
+|--------------------|-----------|------------------------------------------------------|
+| id                 | string    | `${userId}-${YYYYMMDD}` (e.g., user123-20251223)    |
+| userId             | string    | Foreign key to User (partition key for queries)      |
+| date               | date      | Date of entry (YYYY-MM-DD) (sorting key)            |
+| month              | string    | YYYY-MM (for month-range queries)                   |
+| week               | number    | Week number 1-53 (for weekly aggregations)           |
+| year               | number    | Year (for annual reports)                            |
+| tasks              | array     | [{taskId, goalId, taskName, goalName, value, notes, updatedAt}] |
+| goalIds            | array     | [goalId1, goalId2, ...] (denormalized for filtering) |
+| active             | boolean   | Whether log entry is active                          |
+| createdDate        | timestamp | When log was created                                 |
+| updatedDate        | timestamp | Last update timestamp                                |
+| createdBy          | string    | User ID who created this log                         |
+| updatedBy          | string    | User ID who last updated this log                    |
 
-**Composite Index**: (userId, date, taskId) for fast queries
+**Firestore Indexes (Required for optimal performance)**:
+```
+1. Single Field Indexes:
+   - userId (Ascending)
+   - date (Descending)
+   - month (Ascending)
+   - status (Ascending)
+   - completionRate (Descending)
+
+2. Composite Indexes:
+   - (userId, date DESC) → Fast single-day lookups
+   - (userId, month ASC, date DESC) → Fast month-range queries
+   - (userId, week ASC, date DESC) → Fast weekly queries
+   - (userId, status ASC, date DESC) → Fast status filtering
+   - (userId, year ASC, month ASC) → Fast annual reports
+```
+
+**Unique Identifier**: id = `${userId}-${YYYYMMDD}` ensures uniqueness and **O(1) direct document access**
+
+**Query Optimization**:
+
+```typescript
+// ⚡ FAST - Direct document access using composite ID
+db.collection('dailyLogs').doc('user123-20251223').get()
+// Result: ~1ms (direct read)
+
+// ⚡ FAST - Month range query (indexed: userId, month, date)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('month', '==', '2025-12')
+  .orderBy('date', 'desc')
+  .get()
+// Result: ~10-50ms (single month)
+
+// ⚡ FAST - Weekly summary (indexed: userId, week, date)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('week', '==', 52)
+  .orderBy('date', 'desc')
+  .get()
+// Result: ~10-20ms
+
+// ⚡ FAST - Filter by completion status (indexed: userId, status, date)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('status', '==', 'partial')
+  .where('date', '>=', startDate)
+  .where('date', '<=', endDate)
+  .orderBy('date', 'desc')
+  .get()
+// Result: ~15-30ms
+
+// ⚡ FAST - Get incomplete days in month (indexed: userId, month, status)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('month', '==', '2025-12')
+  .where('status', '!=', 'completed')
+  .orderBy('status')
+  .orderBy('date', 'desc')
+  .get()
+// Result: ~20-40ms
+
+// ⚡ FAST - Filter by specific goal (using denormalized goalIds array)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('goalIds', 'array-contains', 'goalId123')
+  .where('month', '==', '2025-12')
+  .orderBy('date', 'desc')
+  .get()
+// Result: ~15-25ms (array-contains is optimized in Firestore)
+
+// 🐢 SLOW - Range query without month field (full scan)
+db.collection('dailyLogs')
+  .where('userId', '==', 'user123')
+  .where('date', '>=', '2025-11-01')
+  .where('date', '<=', '2026-01-31')
+  .get()
+// Result: ~100-500ms (crosses multiple months, slower scan)
+```
+
+**Example Optimized Document**:
+```json
+{
+  "id": "user123-20251223",
+  "userId": "user123",
+  "date": "2025-12-23",
+  "dateTimestamp": 1703289600,
+  "month": "2025-12",
+  "week": 52,
+  "year": 2025,
+  "goalIds": ["goal1", "goal2", "goal3"],
+  "tasks": [
+    { "taskId": "t1", "goalId": "goal1", "taskName": "Fajr Prayer", "goalName": "On Time Salah", "value": true, "notes": "", "updatedAt": 1703337600000 },
+    { "taskId": "t2", "goalId": "goal1", "taskName": "Dhuhr Prayer", "goalName": "On Time Salah", "value": false, "notes": "", "updatedAt": 1703337600000 },
+    { "taskId": "t3", "goalId": "goal2", "taskName": "10 Min Quran", "goalName": "Quran Study", "value": true, "notes": "", "updatedAt": 1703337600000 }
+  ],
+  "active": true,
+  "createdDate": 1703337600000,
+  "createdBy": "user123",
+  "updatedDate": 1703337600000,
+  "updatedBy": "user123"
+}
+```
+
+**Performance Benchmarks** (Firestore):
+| Query Type | With Index | Without Index | Optimization |
+|-----------|-----------|--------------|-----------|
+| Direct ID lookup | 1ms | 1ms | Use composite ID format |
+| Single month | 10ms | 50ms | Index (userId, month, date) |
+| Week range | 15ms | 100ms | Index (userId, week, date) |
+| Status filter | 20ms | 200ms | Index (userId, status, date) |
+| Goal filter | 15ms | 150ms | Denormalize goalIds array |
+| Multi-month | 100ms | 1000ms | Use month field, not date range |
+
+**Advantages of Optimized Structure**:
+- ✅ One document per user per day (perfect for import/export)
+- ✅ Direct `O(1)` access using composite ID format `${userId}-${YYYYMMDD}`
+- ✅ Atomic updates (all tasks saved together, no partial writes)
+- ✅ Denormalized `goalIds` array for fast goal-based filtering
+- ✅ Month/Year/Week fields for optimized range queries (no date range scans)
+- ✅ Seamless mapping to Excel format (tasks array = daily columns)
 
 ### Notification
 | Field        | Type      | Description                                    |
@@ -289,7 +412,7 @@ A simple habit tracking web application where admins create goals/tasks and user
 **UI**:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Goals Management                          [+ Create New Goal]  │
+│  Goals Management       [+ Create New Goal] [📥 Import] [📤 Export] │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐  │
@@ -319,6 +442,609 @@ A simple habit tracking web application where admins create goals/tasks and user
    - Click "Create New Goal" → Navigate to Create Goal page
    - Click "Edit" → Navigate to Edit Goal page with pre-filled data
    - Click "Delete" → Show confirmation dialog, then soft-delete (set active=false)
+   - Click "Import" → Open file uploader dialog for CSV/Excel import
+   - Click "Export" → Download goals and daily logs as Excel file with monthly sheet
+
+---
+
+### 1.5. Import/Export Goals Feature
+**Feature**: Admin can export goal completion data to Excel and import bulk data from CSV/Excel
+
+#### A. Export Goals to Excel
+**Route**: Triggered from `/admin/goals` page via [📤 Export] button
+
+**UI - Export Dialog**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ✕ | Export My Goals to Excel                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ Select Date Range to Export: *                                  │
+│                                                                  │
+│ From: [📅 November 1, 2025]  (Start Date)                       │
+│                                                                  │
+│ To:   [📅 January 31, 2026]  (End Date)                         │
+│                                                                  │
+│ 📋 Summary: 3 months selected (November, December, January)      │
+│                                                                  │
+│ 👤 Exporting: Ahmad Khan (Current User)                         │
+│ (Your assigned goals and daily entries will be exported)        │
+│                                                                  │
+│ Include Data:                                                    │
+│ [✓] Daily Completion Data (Yes/No for each day)                 │
+│                                                                  │
+│          [Cancel]                    [Export as Excel]          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Excel Output Format**:
+- **Filename**: `Goals_Nov2025_Jan2026.xlsx` (Start and End month in filename)
+- **Multiple Sheets**: One sheet per month in the date range
+  - Sheet 1: `November 2025`
+  - Sheet 2: `December 2025`
+  - Sheet 3: `January 2026`
+- **Each Sheet Structure**:
+  - **Row 1**: Header row with "Daily Task Entry Form" in first column, empty columns 2 onwards
+  - **Row 2**: Day numbers (1-30/31) starting from column 3
+  - **Row 3**: Day names (Monday, Tuesday, etc.) starting from column 3
+  - **Row 4 onwards**: Goal and Task data
+    - Column 1: Goal name (merged cells for all tasks of same goal)
+    - Column 2: Task name
+    - Columns 3+: Checkboxes for each day (☑️ = Completed, ☐ = Not Completed, Empty = Not Filled)
+  - **Checkbox Values**: 
+    - ☑️ (Checked) = TRUE = Yes/Completed
+    - ☐ (Unchecked) = FALSE = No/Not Completed
+    - Empty cell = No entry filled
+  - **Visual Representation**: Each cell contains a clickable checkbox that can be toggled on/off
+
+**Export Options**:
+1. **Date Range Selection**: Admin selects from date and to date (can span multiple months)
+2. **Auto-generates Sheets**: One sheet created per month in the range
+3. **Filter by Users**: Select which users' data to include
+4. **Data Preservation**: Sheet name stores month/year info for re-import
+
+**Flow**:
+1. Admin/User clicks [📤 Export] button on Goals List page
+2. Export dialog opens with date range selector
+3. Current user name is automatically displayed (no selection needed)
+4. User selects start date and end date (default: current month)
+5. System calculates month range and shows summary
+6. User clicks "Export as Excel"
+7. System fetches:
+   - All goals assigned to current user for each month in the range
+   - All tasks for those goals
+   - All DailyLog entries for current user in each month
+8. System generates Excel file with:
+   - Multiple sheets (one per month)
+   - Each sheet contains goal rows, task rows, and completion data
+   - Sheet names store date information (e.g., "November 2025")
+9. File downloads automatically: `Goals_Nov2025_Jan2026.xlsx`
+10. Success message: "Export completed successfully! (3 months exported)"
+
+**Sample JSON Data Structure for Export**:
+```typescript
+// Service returns this structure
+interface ExportData {
+  month: string; // "December 2025"
+  startDate: string; // "2025-12-01"
+  endDate: string; // "2025-12-31"
+  totalDays: number; // 31
+  goals: {
+    goalId: string;
+    goalName: string;
+    goalDescription: string;
+    tasks: {
+      taskId: string;
+      taskName: string;
+      taskNotes: string;
+      dailyData: {
+        date: string;
+        value: boolean | null; // true = Y, false = N, null = empty
+      }[];
+      completionPercentage: number; // 0-100
+    }[];
+  }[];
+  currentUserId: string; // Current user exporting data
+}
+```
+
+**Export Behavior**:
+- Only goals assigned to the current user are exported
+- Each user exports only their own data
+- No selection of other users needed
+- Simplifies UI and prevents data access issues
+- Perfect for users downloading their personal habit data
+
+---
+
+#### B. Import Goals from Excel/CSV
+**Route**: Triggered from `/admin/goals` page via [📥 Import] button
+
+**UI - Step 1: File Upload & Analysis**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ✕ | Import Goals from Excel/CSV - Step 1: Upload & Analyze    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ Upload File: [Choose File...] (*.xlsx, *.csv)                   │
+│             Goals_Nov2025_Jan2026.xlsx ✓                        │
+│                                                                  │
+│ [Analyze File]  or  [Cancel]                                    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**UI - Step 2: Review Analysis & Preview**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ✕ | Import Goals - Step 2: Review Analysis                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ 📊 ANALYSIS RESULTS (Read-only, no data created yet)            │
+│ ┌───────────────────────────────────────────────────────────┐  │
+│ │ File: Goals_Nov2025_Jan2026.xlsx                          │  │
+│ │ Sheets: 3 (November 2025, December 2025, January 2026)    │  │
+│ │ Date Range: November 1, 2025 - January 31, 2026           │  │
+│ │                                                           │  │
+│ │ 🎯 GOALS ANALYSIS:                                        │  │
+│ │ ├─ Total Goals in File: 4                                │  │
+│ │ ├─ NEW Goals (will create):           2                 │  │
+│ │ │  ├─ "Gym Workout" [3 tasks] ✓ NEW                 │  │
+│ │ │  └─ "Morning Meditation" [2 tasks] ✓ NEW          │  │
+│ │ └─ EXISTING Goals (found in system):  2                 │  │
+│ │    ├─ "On Time Salah" [5 tasks] ✓ EXISTS            │  │
+│ │    └─ "English Practice" [2 tasks] ✓ EXISTS         │  │
+│ │                                                           │  │
+│ │ 📋 TASKS ANALYSIS:                                        │  │
+│ │ Total Tasks in File: 11                                 │  │
+│ │                                                           │  │
+│ │ NEW GOALS (will be created):                            │  │
+│ │ ├─ Gym Workout [3 NEW tasks]                            │  │
+│ │ │  ├─ Cardio ✓ NEW                                   │  │
+│ │ │  ├─ Strength ✓ NEW                                 │  │
+│ │ │  └─ Stretching ✓ NEW                               │  │
+│ │ └─ Morning Meditation [2 NEW tasks]                     │  │
+│ │    ├─ Morning Mantra ✓ NEW                              │  │
+│ │    └─ Breathing ✓ NEW                                   │  │
+│ │                                                           │  │
+│ │ EXISTING GOALS (adding/updating tasks):                 │  │
+│ │ ├─ On Time Salah [3 exist, 0 new]                       │  │
+│ │ │  ├─ Fajr Prayer ✓ EXISTS (skip)                   │  │
+│ │ │  ├─ Dhuhr Prayer ✓ EXISTS (skip)                  │  │
+│ │ │  └─ (3 more tasks all exist...)                       │  │
+│ │ └─ English Practice [2 exist, 1 new]                    │  │
+│ │    ├─ Speaking ✓ EXISTS (skip)                         │  │
+│ │    ├─ Listening ✓ EXISTS (skip)                        │  │
+│ │    └─ Grammar ✓ NEW (will create)                       │  │
+│ │                                                           │  │
+│ │ Summary: 7 tasks new, 4 tasks existing                  │  │
+│ │                                                           │  │
+│ │ 📅 DAILY LOGS ANALYSIS:                                   │  │
+│ │ Total Daily Entries in File: 1,023                      │  │
+│ │ ├─ NEW logs (will create):        945                   │  │
+│ │ │  └─ From new goals and new tasks                       │  │
+│ │ └─ UPDATE logs (will overwrite):  78                    │  │
+│ │    └─ Existing goals/tasks with new daily data         │  │
+│ │                                                           │  │
+│ │ No Conflicts: All dates in file are safe to import     │  │
+│ │                                                           │  │
+│ │ 👤 ASSIGNMENT:                                           │  │
+│ │ ├─ Current User: Ahmad Khan (ahmad@email.com)           │  │
+│ │ ├─ New Goals: Will assign ONLY to Ahmad                 │  │
+│ │ ├─ Existing Goals: No changes to assignments            │  │
+│ │ └─ No data loss: Import only adds/updates, never deletes│  │
+│ │                                                           │  │
+│ │ 🟢 Status: READY TO IMPORT - All checks passed!         │  │
+│ │                                                           │  │
+│ └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│ [Back & Change File]     [Cancel]     [✓ Confirm & Import]     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Expected CSV/Excel Format**:
+
+```
+,,Daily Task Entry Form,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+,,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday
+Goal,Task,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
+10 min quran,daily quran,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
+,quran poro,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
+,quran shikho,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
+On Time Salah,Fajr Prayer,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Dhuhr Prayer,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Asr Prayer,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Maghrib Prayer,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Isha Prayer,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+English Practice,Speaking,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Listening,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+Gym Workout,Cardio,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE
+,Strength,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE
+,Stretching,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+```
+
+**Date Extraction & Sheet Mapping**:
+- **Sheet Names**: Used to extract startDate and endDate
+  - Sheet "November 2025" → startDate: 2025-11-01, endDate: 2025-11-30
+  - Sheet "December 2025" → startDate: 2025-12-01, endDate: 2025-12-31
+  - Sheet "January 2026" → startDate: 2026-01-01, endDate: 2026-01-31
+- **Multiple Sheets**: All sheets processed and data merged into single import
+- **Date Range**: startDate is first sheet's 1st day, endDate is last sheet's last day
+
+**Parsing Rules**:
+- **Row 1 (Header)**: "Daily Task Entry Form" - Skip this row (metadata)
+- **Row 2 (Day Numbers)**: Contains day numbers (1-30/31) - Use to map columns to dates based on sheet month
+- **Row 3 (Day Names)**: Contains day names (Monday, Tuesday, etc.) - For reference/validation
+- **Row 4 onwards (Data Rows)**:
+  - **Column 1 (Goal)**: Goal name, empty if same goal continues (merged rows)
+  - **Column 2 (Task)**: Task name, required for each task
+  - **Columns 3+ (Days)**: Checkboxes or equivalent values
+    - ☑️ (Checked checkbox) or `TRUE` or `true` or `1` or `Y` or `Yes` = Completed (Yes)
+    - ☐ (Unchecked checkbox) or `FALSE` or `false` or `0` or `N` or `No` = Not completed (No)
+    - Empty cell = No entry (leave null)
+    - Case-insensitive
+- **Checkbox Handling**: When Excel file is downloaded, checkboxes are used for visual clarity. When imported, system converts checkboxes to TRUE/FALSE boolean values.
+
+**Duplicate Detection & Goal/Task Matching Logic**:
+
+**1. Goal Matching**:
+- **Exact Match**: Goal name (case-insensitive) + task list = same goal
+- **Similarity Check**: If goal name matches but tasks differ, flag as "potential duplicate"
+- **Algorithm**:
+  ```
+  For each goal in import:
+    1. Normalize goal name (trim, lowercase)
+    2. Get list of task names from import
+    3. Query system: Find goals with same name (case-insensitive)
+    4. If found:
+       a. Compare task names list
+       b. If 80%+ task names match → SAME GOAL (skip creation)
+       c. If <80% match → Different goal (create new)
+    5. If not found → NEW GOAL (create)
+  ```
+
+**2. Task Matching within Goal**:
+- **Exact Match**: Task name (case-insensitive) + parent goal = same task
+- **Similarity Check**: Using fuzzy matching for typos
+- **Algorithm**:
+  ```
+  For each task in goal:
+    1. Normalize task name (trim, lowercase)
+    2. Query system: Find tasks with same goal + task name
+    3. If found (exact match) → SAME TASK (skip creation, import logs only)
+    4. If not found → NEW TASK (create under existing goal)
+  ```
+
+**3. Example Scenarios**:
+```
+SCENARIO A: All New Goals
+└─ "On Time Salah" (new) + 5 tasks (new)
+   └─ Result: Create goal + create 5 tasks + assign to current user only
+
+SCENARIO B: Goal Exists, New Tasks
+└─ "On Time Salah" (exists) + [Fajr (exists), Dhuhr (exists), Tahajjud (new)]
+   └─ Result: Skip goal creation, create only Tahajjud task, import logs for all tasks
+
+SCENARIO C: Duplicate Detection
+└─ "On Time Salah" (exists in system) imported again
+   └─ Result: Skip goal creation, skip task creation, merge logs only
+
+SCENARIO D: Similar Goal Names (typo)
+└─ "On Time Salah" exists, import has "On Time Salat" (typo)
+   └─ Result: Flag as potential duplicate, show warning in preview
+   └─ Admin can choose: Create as new or merge with existing
+```
+
+**Validation Rules**:
+- Goal name: Required, max 100 chars
+- Task name: Required, max 100 chars
+- Daily values: Must be Y/N, 1/0, true/false, or empty
+- At least 1 goal required
+- At least 1 task per goal
+- At least 1 day of data
+- File must contain valid sheet names (Month Year format)
+
+**Sample Analysis Response (Step 2 - Read-only, before any data creation)**:
+```json
+{
+  "step": 2,
+  "status": "ANALYSIS_COMPLETE",
+  "readyToImport": true,
+  "dataStatus": "NO DATA CREATED YET - This is analysis only",
+  "message": "Analysis complete. Review details below before confirming.",
+  "dateRange": {
+    "startDate": "2025-11-01",
+    "endDate": "2026-01-31",
+    "sheetsProcessed": 3
+  },
+  "goalsAnalysis": {
+    "totalDetected": 4,
+    "new": [
+      {"name": "Gym Workout", "taskCount": 3, "action": "WILL_CREATE"},
+      {"name": "Morning Meditation", "taskCount": 2, "action": "WILL_CREATE"}
+    ],
+    "existing": [
+      {"name": "On Time Salah", "taskCount": 5, "action": "SKIP_GOAL"},
+      {"name": "English Practice", "taskCount": 2, "action": "SKIP_GOAL"}
+    ]
+  },
+  "tasksAnalysis": {
+    "totalDetected": 11,
+    "willCreate": 7,
+    "willSkip": 4
+  },
+  "dailyLogsAnalysis": {
+    "totalEntries": 1023,
+    "willCreate": 945,
+    "willUpdate": 78
+  },
+  "assignmentInfo": {
+    "currentUser": "Ahmad Khan",
+    "newGoalsAssignment": "ONLY to current user"
+  },
+  "warnings": [],
+  "errors": [],
+  "nextAction": "Review analysis and click 'Confirm & Import' to proceed, or 'Back & Change File' to cancel."
+}
+```
+
+**Sample Final Response (Step 3 - After user confirms and data is created)**:
+```json
+{
+  "step": 3,
+  "status": "IMPORT_COMPLETED",
+  "success": true,
+  "dataStatus": "DATA SUCCESSFULLY CREATED",
+  "message": "✓ Import completed successfully! All data has been created and saved.",
+  "summary": {
+    "goalsCreated": 2,
+    "tasksCreated": 7,
+    "dailyLogsCreated": 945,
+    "dailyLogsUpdated": 78,
+    "assignmentsCreated": 2,
+    "totalDataAddedOrUpdated": 1032
+  },
+  "newGoals": [
+    {
+      "id": "goal_gym_123",
+      "name": "Gym Workout",
+      "tasksCreated": 3,
+      "assignedTo": "ahmad@email.com"
+    },
+    {
+      "id": "goal_meditation_456",
+      "name": "Morning Meditation",
+      "tasksCreated": 2,
+      "assignedTo": "ahmad@email.com"
+    }
+  ],
+  "nextSteps": "View new goals in Goals List or Export again to verify"
+}
+```
+
+**Scenario 1: Create All New Goals with New Tasks**
+```
+Steps:
+1. Admin selects file with new goals (never seen before)
+2. "Create New Goals if not exist" is checked (default)
+3. "Create New Tasks if not exist" is checked (default)
+4. "Assign to Current User Only" is checked (default)
+5. Clicks "Import & Create"
+6. System:
+   - Analyzes all sheets and detects zero duplicate goals
+   - Creates Goal documents (with generated dates from sheet names)
+   - Creates Task documents for each task
+   - Creates GoalAssignment ONLY for current user (not select all)
+   - Creates DailyLog entries for each day with Y/N values
+7. Success: "4 goals with 11 tasks created and assigned to you!"
+```
+
+**Scenario 2: Goal Exists, Import New Tasks Only**
+```
+Steps:
+1. Admin selects file with existing goal "On Time Salah" but new tasks
+2. "Create New Goals if not exist" unchecked
+3. "Create New Tasks if not exist" is checked
+4. Clicks "Import & Create"
+5. System:
+   - Detects "On Time Salah" exists in system
+   - Detects 2 new tasks: "Tahajjud" and "Sunrise Prayer"
+   - Creates only the 2 new tasks under existing goal
+   - Does NOT create new goal
+   - Imports DailyLog entries for all tasks (old + new)
+7. Success: "Found 1 existing goal, created 2 new tasks under it, imported logs!"
+```
+
+**Scenario 3: Full Import with Duplicate Detection**
+```
+Steps:
+1. Admin selects file with mix of new and existing goals
+2. All options checked (default)
+3. Clicks "Import & Create"
+4. System analyzes file:
+   - Detects "On Time Salah" + 5 tasks = DUPLICATE (skip)
+   - Detects "English Practice" = EXISTS but 3 tasks (2 exist, 1 new)
+   - Detects "Gym Workout" = NEW (create)
+   - Shows preview with analysis
+5. Admin reviews and confirms
+6. System:
+   - Creates "Gym Workout" + 3 tasks
+   - Creates 1 new task under "English Practice"
+   - Assigns only current user to new goals
+   - Imports all DailyLog entries
+7. Success: "Analyzed 4 goals. Created 1 new goal (3 tasks), added 1 task to existing goal, imported logs!"
+```
+
+**Error Handling**:
+- **Duplicate Goals**: Show as "DUPLICATE - SKIPPED" in preview, can be merged
+- **Similar Goal Names** (typo): Flag with "⚠️ POTENTIAL DUPLICATE" - show similarity %
+- **Missing Task Name**: Skip row, show warning
+- **Invalid Sheet Names**: Extract month/year, show warning if invalid format
+- **File Format Issues**: Detect Excel/CSV automatically
+- **Permission Issues**: Only current user is assigned to new goals
+
+**Flow - 3 Step Import Process (Safe Data Creation)**:
+
+**STEP 1: Upload & Analyze**
+1. User clicks [📥 Import] button on Goals List page
+2. Import dialog opens (Step 1: Upload)
+3. User selects file (Excel or CSV)
+4. User clicks [Analyze File]
+5. System immediately analyzes file WITHOUT creating any data:
+   - Parses all sheets and extracts date range from sheet names
+   - Detects all goals in file
+   - Detects all tasks for each goal
+   - Queries database to find which goals already exist
+   - Queries database to find which tasks exist under each goal
+   - Counts daily log entries and identifies new vs updates
+   - Checks for duplicates and conflicts
+   - **CRITICAL: NO DATA IS CREATED YET - This is read-only analysis**
+
+**STEP 2: Review Analysis**
+6. Dialog moves to Step 2: Review Analysis
+7. System displays detailed breakdown showing:
+   - Which goals will be CREATED (new goals)
+   - Which goals already EXIST (will be skipped)
+   - Which tasks will be CREATED (new tasks)
+   - Which tasks already EXIST (will be skipped)
+   - How many daily logs will be created vs updated
+   - Current user assignment confirmation
+   - Clear status: "READY TO IMPORT - All checks passed!"
+8. User carefully reviews the analysis
+9. User can see EXACTLY what will be added before confirming
+10. **User can cancel here [Back & Change File] and nothing is created**
+
+**STEP 3: Confirm & Execute**
+11. User clicks [✓ Confirm & Import]
+12. System validates all data one final time
+13. System NOW creates/updates (data creation happens only after confirmation):
+    - Goal documents (only new goals)
+    - Task documents (only new tasks within goals)
+    - GoalAssignment documents (ONLY for current importing user)
+    - DailyLog documents (new entries and updates)
+14. System shows progress: "Creating 2 goals... Creating 7 tasks... Importing 1,023 daily logs..."
+15. User sees detailed success message with exact counts
+16. User can review complete import summary
+17. User redirected to Goals List to verify newly created goals
+
+**KEY SAFETY FEATURES**:
+- ✅ Analysis phase is 100% read-only (no database changes)
+- ✅ Users see exactly what will happen BEFORE confirming
+- ✅ Clear breakdown of new vs existing items
+- ✅ Option to go back and select different file
+- ✅ Final confirmation required before data creation
+- ✅ Prevents accidental data creation completely
+- ✅ If user cancels at Step 2, nothing is created
+- ✅ Easy to understand and verify what's being added
+
+**Sample Import Response**:
+```json
+{
+  "success": true,
+  "message": "Import completed successfully",
+  "dateRange": {
+    "startDate": "2025-11-01",
+    "endDate": "2026-01-31",
+    "sheetsProcessed": 3
+  },
+  "analysis": {
+    "goalsDetected": 4,
+    "goalsNew": 2,
+    "goalsExisting": 2,
+    "taskDetected": 11,
+    "tasksNew": 5,
+    "tasksExisting": 6,
+    "duplicatesDetected": 0,
+    "potentialDuplicates": 0
+  },
+  "stats": {
+    "goalsCreated": 2,
+    "goalsSkipped": 2,
+    "tasksCreated": 5,
+    "tasksSkipped": 6,
+    "logsCreated": 923,
+    "logsUpdated": 100,
+    "assignmentsCreated": 2,
+    "errorsFound": 0
+  },
+  "assignmentInfo": {
+    "message": "New goals assigned to: Ahmad Khan (current user)",
+    "userAssigned": "ahmad@email.com"
+  },
+  "errors": []
+}
+```
+
+---
+
+#### C. Sample Excel Files for Reference
+
+**Export Example - December 2025**:
+
+```
+,,Daily Task Entry Form,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+,,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday
+Goal,Task,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+On Time Salah,Fajr Prayer,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Dhuhr Prayer,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Asr Prayer,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Maghrib Prayer,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Isha Prayer,TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+10 Minute Quran,10 Min Recitation,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE
+English Practice,Speaking,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+,Listening,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+Gym Workout,Cardio,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE
+,Strength,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE
+,Stretching,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+```
+
+**Technical Implementation Details**:
+
+**Dependencies**:
+- `exceljs` (npm package) - For reading/writing Excel files
+- `papaparse` (npm package) - For parsing CSV files
+- Angular HttpClient - For file upload
+
+**Service Methods**:
+```typescript
+// Export service methods
+exportGoalsToExcel(month: Date, userIds: string[], options: ExportOptions): Observable<Blob>
+exportGoalsToCsv(month: Date, userIds: string[], options: ExportOptions): Observable<Blob>
+generateExcelFile(exportData: ExportData): Blob
+
+// Import service methods
+importGoalsFromFile(file: File, options: ImportOptions): Observable<ImportResult>
+parseExcelFile(file: File): Observable<ParsedGoalData>
+parseCsvFile(file: File): Observable<ParsedGoalData>
+validateImportData(data: ParsedGoalData): ValidationError[]
+createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<ImportResult>
+```
+
+**Database Impact**:
+- **Export**: Read-only operation, no database changes
+- **Import**: 
+  - Creates new Goal, Task, GoalAssignment, DailyLog documents
+  - Updates existing documents if merge options selected
+  - Preserves existing records, adds new ones
+  - No data loss during import
+
+**Performance Considerations**:
+- Large files (1000+ rows): Process in batches to avoid UI blocking
+- Use web workers for file parsing
+- Implement progress indicator for long imports
+- Cache month/year detection logic
+
+**Security Considerations**:
+- Only admins can export/import
+- File upload size limit: 10MB
+- Validate file format before processing
+- Sanitize goal/task names from import
+- Log all import operations for audit trail
+- Confirm user selection before creating bulk data
 
 ---
 
@@ -1585,23 +2311,6 @@ exports.checkAndSendNotifications = functions.pubsub
     
     return null;
   });
-
-// Alternative: Run every minute for more precise timing (higher cost)
-exports.checkAndSendNotificationsMinutely = functions.pubsub
-  .schedule('* * * * *') // Run every minute
-  .timeZone('Asia/Dhaka')
-  .onRun(async (context) => {
-    // Same logic as above
-  });
-```
-
-**Note**: 
-- The hourly function runs at the top of each hour (e.g., 9:00, 10:00, 21:00)
-- All active users receive notifications (regardless of goal assignments)
-- Users must grant notification permission and their FCM token must be stored in their User document
-- Timezone: Asia/Dhaka (Bangladesh)
-
----
 
 ## GitHub Actions Workflow
 
