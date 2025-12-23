@@ -1,27 +1,35 @@
 import { Injectable } from '@angular/core';
 import { Observable, from, map } from 'rxjs';
-import { Firestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, 
-         query, where, orderBy, serverTimestamp } from '@angular/fire/firestore';
+import { 
+  Firestore, 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  serverTimestamp 
+} from '@angular/fire/firestore';
 import { INotificationService } from '../interfaces/notification.service.interface';
 import { Notification, NotificationModel } from '../../models/notification.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class NotificationFirebaseService implements INotificationService {
-  private collectionName = 'notifications';
+  private readonly collectionName = 'notifications';
 
   constructor(private firestore: Firestore) {}
 
   getNotificationById(notificationId: string): Observable<Notification | null> {
     const docRef = doc(this.firestore, `${this.collectionName}/${notificationId}`);
     return from(getDoc(docRef)).pipe(
-      map(docSnap => {
-        if (docSnap.exists()) {
-          return NotificationModel.fromFirestore(docSnap.id, docSnap.data());
-        }
-        return null;
-      })
+      map(docSnap => docSnap.exists() 
+        ? NotificationModel.fromFirestore(docSnap.id, docSnap.data()) 
+        : null
+      )
     );
   }
 
@@ -38,41 +46,44 @@ export class NotificationFirebaseService implements INotificationService {
 
   getActiveNotifications(): Observable<Notification[]> {
     const collectionRef = collection(this.firestore, this.collectionName);
-    const q = query(
-      collectionRef,
-      where('active', '==', true)
-    );
+    const q = query(collectionRef, where('active', '==', true));
     
     return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const list = querySnapshot.docs.map(doc => NotificationModel.fromFirestore(doc.id, doc.data()));
-        // Sort client-side by time HH:mm to avoid composite index requirement
-        return list.sort((a, b) => a.time.localeCompare(b.time));
+      map(snapshot => {
+        const notifications = snapshot.docs.map(doc => 
+          NotificationModel.fromFirestore(doc.id, doc.data())
+        );
+        return notifications.sort((a, b) => a.time.localeCompare(b.time));
       })
     );
   }
 
   createNotification(notification: Notification): Observable<Notification> {
     const docRef = doc(collection(this.firestore, this.collectionName));
-    const notificationId = docRef.id;
-    const newNotification = new NotificationModel({ ...notification, id: notificationId });
+    const newNotification = new NotificationModel({ 
+      ...notification, 
+      id: docRef.id 
+    });
     
-    return from(setDoc(docRef, {
+    const data = {
       ...newNotification.toFirestore(),
       createdDate: serverTimestamp(),
       updatedDate: serverTimestamp()
-    })).pipe(
+    };
+    
+    return from(setDoc(docRef, data)).pipe(
       map(() => newNotification)
     );
   }
 
   updateNotification(notification: Notification): Observable<void> {
     const docRef = doc(this.firestore, `${this.collectionName}/${notification.id}`);
-    const updateData: any = { ...notification };
-    delete updateData.id;
-    updateData.updatedDate = serverTimestamp();
+    const { id, ...updateData } = notification as any;
     
-    return from(updateDoc(docRef, updateData)).pipe(
+    return from(updateDoc(docRef, {
+      ...updateData,
+      updatedDate: serverTimestamp()
+    })).pipe(
       map(() => void 0)
     );
   }

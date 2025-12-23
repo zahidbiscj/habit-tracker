@@ -1,56 +1,41 @@
 <div class="test-notification-container">
-  <h3>🔔 Test Browser Notifications</h3>
-  
-  <!-- Scheduler Status -->
-  <div class="status-panel" *ngIf="schedulerStatus">
-    <div class="status-row">
-      <span class="status-label">Scheduler Status:</span>
-      <span [class]="schedulerStatus.isRunning ? 'status-success' : 'status-error'">
-        {{ schedulerStatus.isRunning ? '✅ Running' : '❌ Stopped' }}
-      </span>
-    </div>
-    <div class="status-row">
-      <span class="status-label">Permission:</span>
-      <span [class]="schedulerStatus.permission === 'granted' ? 'status-success' : 'status-error'">
-        {{ schedulerStatus.permission }}
-      </span>
-    </div>
-    <div class="status-row">
-      <span class="status-label">Current Time:</span>
-      <span class="status-info">{{ schedulerStatus.currentTime }}</span>
-    </div>
-    <div class="status-row">
-      <span class="status-label">Current Day:</span>
-      <span class="status-info">{{ schedulerStatus.currentDay }} ({{ schedulerStatus.currentDayNumber }})</span>
-    </div>
-    <div class="status-row">
-      <span class="status-label">Notifications Today:</span>
-      <span class="status-info">{{ schedulerStatus.notifiedCount }}</span>
-    </div>
-  </div>
+  <h3>🔔 Test Push Notifications</h3>
   
   <div class="button-group">
     <button class="btn-test" (click)="testNotification()">
       🔔 Test Instant Notification
     </button>
     
-    <button class="btn-test-schedule" (click)="scheduleTestForNextMinute()">
-      ⏰ Schedule Test for Next Minute
+    <button class="btn-push" (click)="enablePush()" [disabled]="!pushSupported">
+      📲 Enable Push (FCM)
+    </button>
+    
+    <button class="btn-attach" (click)="attachForeground()">
+      🖼️ Attach Foreground Handler
     </button>
   </div>
   
   <div class="info-box">
-    <p style="margin-top: 10px;"><strong>⚙️ How Scheduling Works:</strong></p>
+    <p style="margin-top: 10px;"><strong>⚙️ How Push Notifications Work:</strong></p>
     <ol>
-      <li>Set notification time in <strong>HH:mm</strong> format (e.g., 14:30 for 2:30 PM)</li>
+      <li>Create a notification with time in <strong>HH:mm</strong> format (e.g., 14:30 for 2:30 PM)</li>
       <li>Select which days of the week (0=Sunday, 1=Monday, etc.)</li>
-      <li>Notification triggers when current time matches exactly</li>
-      <li>Check console logs (F12) to see matching details</li>
-      <li><strong>App must be OPEN or INSTALLED as PWA</strong></li>
+      <li>When created, an immediate push is sent to all your devices</li>
+      <li>At the scheduled time, another push is sent automatically via Cloud Functions</li>
+      <li><strong>Works even when app is closed!</strong> Push notifications are delivered by the server</li>
     </ol>
+    <div class="push-status">
+      <p><strong>Push Status:</strong></p>
+      <ul>
+        <li>Support: {{ pushSupported ? '✅ Supported' : '❌ Not supported' }}</li>
+        <li>VAPID Key: {{ vapidConfigured ? '✅ Configured' : '❌ Missing' }}</li>
+        <li>Permission: {{ notificationPermission }}</li>
+        <li>FCM Token: <span *ngIf="fcmToken; else noToken">{{ fcmToken }}</span><ng-template #noToken>Not registered</ng-template></li>
+      </ul>
+    </div>
   </div>
   
-  <div class="help-text" *ngIf="schedulerStatus?.permission === 'denied'">
+  <div class="help-text" *ngIf="notificationPermission === 'denied'">
     <p class="error-text">
       ⚠️ <strong>Notifications are BLOCKED!</strong> Enable them:
     </p>

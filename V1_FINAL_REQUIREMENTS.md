@@ -1,3 +1,24 @@
+## 🔔 Notification Push (FCM) — UI & Trigger
+
+### Notification UI (Tray)
+```
+┌───────────────────────────────┐
+│ [Title: Daily Reminder]       │
+│ [Body: Fill today’s habits]   │
+│ [Time: 21:00]                 │
+└───────────────────────────────┘
+```
+
+### How It Triggers
+- Service Worker receives FCM push at scheduled time.
+- Backend sender triggers push exactly at HH:mm.
+- Works if app is closed; no setInterval/minute polling.
+
+### Get VAPID Key (1–2–3)
+1. Open Firebase Console → Project Settings → Cloud Messaging.
+2. In “Web Push certificates”, click “Generate key pair” and copy “Public key”.
+3. Add it to environments: `firebase.vapidKey`, build/deploy.
+
 # Habit Tracker App - Final V1 Requirements
 
 **Goal:** The codebase must be loosely coupled and provider-agnostic, so the backend (Firebase, Supabase, REST API, etc.) can be swapped with minimal changes to the UI/business logic.

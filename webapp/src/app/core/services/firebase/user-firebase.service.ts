@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, from, map } from 'rxjs';
 import { Firestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, 
          query, where, serverTimestamp, Timestamp } from '@angular/fire/firestore';
+import { arrayUnion, arrayRemove } from 'firebase/firestore';
 import { IUserService } from '../interfaces/user.service.interface';
 import { User, UserModel } from '../../models/user.model';
 
@@ -85,5 +86,24 @@ export class UserFirebaseService implements IUserService {
     })).pipe(
       map(() => void 0)
     );
+  }
+
+  addFcmToken(userId: string, fcmToken: string): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${userId}`);
+    return from(updateDoc(docRef, {
+      // maintain last token for backward compatibility
+      fcmToken: fcmToken,
+      // store all device tokens
+      fcmTokens: arrayUnion(fcmToken),
+      updatedDate: serverTimestamp()
+    })).pipe(map(() => void 0));
+  }
+
+  removeFcmToken(userId: string, fcmToken: string): Observable<void> {
+    const docRef = doc(this.firestore, `${this.collectionName}/${userId}`);
+    return from(updateDoc(docRef, {
+      fcmTokens: arrayRemove(fcmToken),
+      updatedDate: serverTimestamp()
+    })).pipe(map(() => void 0));
   }
 }

@@ -142,14 +142,6 @@ export class BrowserNotificationService {
 
       console.log('✅ Direct notification created successfully!');
 
-      // Auto close after 5 seconds unless requireInteraction is true
-      if (!options.requireInteraction) {
-        setTimeout(() => {
-          console.log('⏰ Auto-closing notification');
-          notification.close();
-        }, 5000);
-      }
-
       // Handle notification click
       notification.onclick = () => {
         console.log('👆 Notification clicked');
@@ -177,12 +169,4 @@ export class BrowserNotificationService {
     }
   }
 
-  /**
-   * Schedule a notification (uses setTimeout - only works while app is open)
-   */
-  scheduleNotification(options: BrowserNotificationOptions, delayMs: number): void {
-    setTimeout(() => {
-      this.show(options).subscribe();
-    }, delayMs);
-  }
 }

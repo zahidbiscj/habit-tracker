@@ -193,17 +193,15 @@ export class NotificationFormComponent implements OnInit {
           requireInteraction: true
         }).subscribe(success => {
           if (success) {
-            setTimeout(() => {
-              alert(
-                '✅ Test notification sent!\n\n' +
-                'Did you see the notification?\n\n' +
-                'The real notification will appear:\n' +
-                `• Time: ${notification.time}\n` +
-                `• Days: ${this.getDaysString(notification.daysOfWeek)}\n\n` +
-                'Make sure the app is open or installed as PWA.'
-              );
-              this.router.navigate(['/admin/notifications']);
-            }, 1000);
+            alert(
+              '✅ Test notification sent!\n\n' +
+              'Did you see the notification?\n\n' +
+              'The real notification will appear:\n' +
+              `• Time: ${notification.time}\n` +
+              `• Days: ${this.getDaysString(notification.daysOfWeek)}\n\n` +
+              'Make sure the app is open or installed as PWA.'
+            );
+            this.router.navigate(['/admin/notifications']);
           } else {
             alert('Failed to show test notification. Please check browser permissions.');
             this.router.navigate(['/admin/notifications']);
