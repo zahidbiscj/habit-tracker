@@ -7,7 +7,7 @@ export const environment = {
         storageBucket: "habit-tracker-1e347.firebasestorage.app",
         messagingSenderId: "107464777450",
         appId: "1:107464777450:web:a4032afe0b553b18720193",
-        vapidKey: "BA2amRZ3FCQVBhlGyfdNuHKCkzOHlT3N8r1MCdAQb6_CFVhPgMq7Iw5Nwy9uXZ_BJ5XIhAhSYcLpHF3OFAhnYIE"
+        vapidKey: "BBQw-v24b2f3ZAAnIiOBuY08V0rcfUblA5RFBFYyQ4ucCYyC6MTZ4WJAJJemq5lMrXa_OfIqYXuxnHRxZL2wpf8"
     },
     timezone: 'Asia/Dhaka'
 };
