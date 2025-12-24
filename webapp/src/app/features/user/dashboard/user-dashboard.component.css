@@ -210,6 +210,12 @@
   font-size: 11px !important;
   gap: 0.1rem !important;
 }
+
+.btn-today {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
 .next-task-label,
 .next-task-label-deadline,
 .next-task-timer-row,
