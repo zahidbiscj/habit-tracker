@@ -10,6 +10,11 @@
                     (mouseleave)="onPointerCancel()" (touchstart)="onTouchStart($event)"
                     (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" tabindex="0" role="region"
                     aria-label="Next Task Carousel">
+                    <div class="next-task-swipe-row">
+                        <div class="swipe-indicator-bar">
+                            <span class="index-indicator">{{ currentTaskIndex + 1 }}/{{ upcomingTasks.length }}</span>
+                        </div>
+                    </div>
                     <div class="next-task-compact-row">
                         <div class="next-task-compact-title">Upcoming Task</div>
                         <div class="next-task-compact-timer">
@@ -26,16 +31,6 @@
                     <div class="progress-bar">
                         <div class="progress-fill" [style.width.%]="nextTaskInfo.progressValue"
                             [style.background]="nextTaskInfo.progressColor"></div>
-                    </div>
-                    <div class="next-task-swipe compact">
-                        <span>swipe to goto next task</span>
-                        <span class="nav-buttons">
-                            <button class="nav-btn-inline" (click)="goToPrevTask()" [disabled]="currentTaskIndex === 0"
-                                aria-label="Previous task">←</button>
-                            <span class="index-indicator">{{ currentTaskIndex + 1 }}/{{ upcomingTasks.length }}</span>
-                            <button class="nav-btn-inline" (click)="goToNextTask()"
-                                [disabled]="currentTaskIndex >= upcomingTasks.length - 1" aria-label="Next task">→</button>
-                        </span>
                     </div>
                 </div>
             </ng-container>
