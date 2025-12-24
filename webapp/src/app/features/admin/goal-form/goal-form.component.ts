@@ -8,12 +8,14 @@ import { AuthFirebaseService } from '../../../core/services/firebase/auth-fireba
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
 import { User } from '../../../core/models/user.model';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 interface TaskInput {
   tempId: string;
   id?: string;
   name: string;
+  lastTimeToComplete: string;
   additionalNotes: string;
 }
 
@@ -101,6 +103,7 @@ export class GoalFormComponent implements OnInit {
             tempId: `task_${index}`,
             id: task.id,
             name: task.name,
+            lastTimeToComplete: task.lastTimeToComplete || '',
             additionalNotes: task.additionalNotes || ''
           }));
           
@@ -128,6 +131,7 @@ export class GoalFormComponent implements OnInit {
     this.tasks.push({
       tempId: `task_${Date.now()}`,
       name: '',
+      lastTimeToComplete: '',
       additionalNotes: ''
     });
   }
@@ -194,6 +198,7 @@ export class GoalFormComponent implements OnInit {
           id: this.generateId(), // Generate temporary ID
           goalId: goal.id,
           name: task.name.trim(),
+          lastTimeToComplete: task.lastTimeToComplete.trim(),
           additionalNotes: task.additionalNotes.trim(),
           position: index,
           type: 'boolean' as const,
@@ -244,97 +249,108 @@ export class GoalFormComponent implements OnInit {
   updateGoal(): void {
     if (!this.goalId) return;
 
-    // Load current goal first to get all fields
-    this.goalService.getGoalById(this.goalId).subscribe({
-      next: (currentGoal) => {
-        if (!currentGoal) {
-          alert('Goal not found');
-          this.loading = false;
-          return;
-        }
+    const goalId = this.goalId!;
+    this.goalService.getGoalById(goalId)
+      .pipe(
+        switchMap(currentGoal => {
+          if (!currentGoal) {
+            alert('Goal not found');
+            this.loading = false;
+            return throwError(() => new Error('Goal not found'));
+          }
 
-        const updatedGoal: Goal = {
-          ...currentGoal,
-          name: this.goalName.trim(),
-          description: this.goalDescription.trim(),
-          startDate: this.startDate,
-          endDate: this.endDate,
-          updatedDate: new Date(),
-          updatedBy: this.currentUserId
-        };
+          const updatedGoal: Goal = {
+            ...currentGoal,
+            name: this.goalName.trim(),
+            description: this.goalDescription.trim(),
+            startDate: this.startDate,
+            endDate: this.endDate,
+            updatedDate: new Date(),
+            updatedBy: this.currentUserId
+          };
 
-        this.goalService.updateGoal(updatedGoal).subscribe({
-          next: () => {
-            // Update tasks - delete old ones and create new ones
-            this.taskService.deleteTasksByGoalId(this.goalId!).subscribe({
-              next: () => {
-                const tasksData: Task[] = this.tasks.map((task, index) => ({
-              id: this.generateId(), // Generate temporary ID
-              goalId: this.goalId!,
-              name: task.name.trim(),
-              additionalNotes: task.additionalNotes.trim(),
-              position: index,
-              type: 'boolean' as const,
-              active: true,
-              createdDate: new Date(),
-              updatedDate: new Date(),
-              createdBy: this.currentUserId,
-              updatedBy: this.currentUserId
-            }));
+          return this.goalService.updateGoal(updatedGoal).pipe(
+            switchMap(() => this.taskService.getTasksByGoalId(goalId)),
+            switchMap(dbTasks => {
+              const dbTaskMap = new Map(dbTasks.map(t => [t.id, t]));
+              const formTaskIds = new Set(this.tasks.filter(t => t.id).map(t => t.id as string));
 
-            this.taskService.createTasks(tasksData).subscribe({
-              next: () => {
-                // Update assignments
-                this.goalAssignmentService.deleteAssignmentsByGoalId(this.goalId!).subscribe({
-                  next: () => {
-                    if (this.selectedUserIds.length > 0) {
-                      this.goalAssignmentService.assignGoalToUsers(this.goalId!, this.selectedUserIds, this.currentUserId).subscribe({
-                        next: () => {
-                          this.loading = false;
-                          alert('Goal updated successfully');
-                          this.router.navigate(['/admin/goals']);
-                        },
-                        error: (error) => {
-                          console.error('Error updating assignments:', error);
-                          this.loading = false;
-                          alert('Goal updated but failed to assign users');
-                        }
-                      });
-                    } else {
-                      this.loading = false;
-                      alert('Goal updated successfully');
-                      this.router.navigate(['/admin/goals']);
-                    }
-                  },
-                  error: (error) => {
-                    console.error('Error deleting assignments:', error);
-                    this.loading = false;
-                    alert('Failed to update assignments');
-                  }
-                });
-              },
-              error: (error) => {
-                console.error('Error creating tasks:', error);
-                this.loading = false;
-                alert('Goal updated but failed to update tasks');
+              const tasksToUpdate: Task[] = [];
+              const tasksToCreate: Task[] = [];
+              const tasksToDelete: string[] = [];
+
+              // Prepare update and create lists
+              this.tasks.forEach((task, index) => {
+                if (task.id && dbTaskMap.has(task.id)) {
+                  const dbTask = dbTaskMap.get(task.id)!;
+                  tasksToUpdate.push({
+                    ...dbTask,
+                    name: task.name.trim(),
+                    lastTimeToComplete: task.lastTimeToComplete.trim(),
+                    additionalNotes: task.additionalNotes.trim(),
+                    position: index,
+                    updatedDate: new Date(),
+                    updatedBy: this.currentUserId
+                  });
+                } else {
+                  tasksToCreate.push({
+                    id: this.generateId(),
+                    goalId,
+                    name: task.name.trim(),
+                    lastTimeToComplete: task.lastTimeToComplete.trim(),
+                    additionalNotes: task.additionalNotes.trim(),
+                    position: index,
+                    type: 'boolean',
+                    active: true,
+                    createdDate: new Date(),
+                    updatedDate: new Date(),
+                    createdBy: this.currentUserId,
+                    updatedBy: this.currentUserId
+                  });
+                }
+              });
+
+              // Prepare delete list
+              dbTasks.forEach(dbTask => {
+                if (!formTaskIds.has(dbTask.id)) {
+                  tasksToDelete.push(dbTask.id);
+                }
+              });
+
+              const updates$ = tasksToUpdate.length
+                ? forkJoin(tasksToUpdate.map(t => this.taskService.updateTask(t)))
+                : of(void 0);
+              const creates$ = tasksToCreate.length
+                ? this.taskService.createTasks(tasksToCreate)
+                : of([]);
+              const deletes$ = tasksToDelete.length
+                ? forkJoin(tasksToDelete.map(id => this.taskService.deleteTask(id)))
+                : of(void 0);
+
+              return forkJoin([updates$, creates$, deletes$]);
+            }),
+            switchMap(() => this.goalAssignmentService.deleteAssignmentsByGoalId(goalId)),
+            switchMap(() => {
+              if (this.selectedUserIds.length > 0) {
+                return this.goalAssignmentService.assignGoalToUsers(goalId, this.selectedUserIds, this.currentUserId);
               }
-            });
-          },
-          error: (error) => {
-            console.error('Error deleting tasks:', error);
-            this.loading = false;
-            alert('Failed to update tasks');
-          }
-        });
-          },
-          error: (error) => {
-            console.error('Error updating goal:', error);
-            this.loading = false;
-            alert('Failed to update goal');
-          }
-        });
-      }
-    });
+              return of(void 0);
+            })
+          );
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          alert('Goal updated successfully');
+          this.router.navigate(['/admin/goals']);
+        },
+        error: (error) => {
+          console.error('Error updating goal:', error);
+          this.loading = false;
+          alert('Failed to update goal');
+        }
+      });
   }
 
   onCancel(): void {

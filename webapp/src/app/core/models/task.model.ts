@@ -8,6 +8,7 @@ export interface Task {
   type: 'boolean';
   additionalNotes: string;
   position: number;
+  lastTimeToComplete: string; // HH:mm format, e.g., '14:00'
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -22,6 +23,7 @@ export class TaskModel implements Task {
   type: 'boolean' = 'boolean';
   additionalNotes: string;
   position: number;
+  lastTimeToComplete: string;
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -35,6 +37,7 @@ export class TaskModel implements Task {
     this.type = 'boolean';
     this.additionalNotes = data.additionalNotes || '';
     this.position = data.position || 0;
+    this.lastTimeToComplete = data.lastTimeToComplete || '';
     this.active = data.active !== undefined ? data.active : true;
     this.createdDate = data.createdDate || new Date();
     this.updatedDate = data.updatedDate || new Date();
@@ -50,6 +53,7 @@ export class TaskModel implements Task {
       type: 'boolean',
       additionalNotes: data.additionalNotes,
       position: data.position,
+      lastTimeToComplete: data.lastTimeToComplete || '',
       active: data.active,
       createdDate: data.createdDate?.toDate() || new Date(),
       updatedDate: data.updatedDate?.toDate() || new Date(),
@@ -65,6 +69,7 @@ export class TaskModel implements Task {
       type: this.type,
       additionalNotes: this.additionalNotes,
       position: this.position,
+      lastTimeToComplete: this.lastTimeToComplete,
       active: this.active,
       createdDate: this.createdDate,
       updatedDate: this.updatedDate,

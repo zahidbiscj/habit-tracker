@@ -1,3 +1,4 @@
+// (Removed duplicate misplaced touch event handlers)
 import { Component, OnInit } from '@angular/core';
 import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
 import { GoalAssignmentFirebaseService } from '../../../core/services/firebase/goal-assignment-firebase.service';
@@ -15,6 +16,17 @@ interface GoalWithTasks {
   completedToday: boolean;
 }
 
+interface NextTaskInfo {
+  task: Task;
+  goalName: string;
+  timeLeftDisplay: string;
+  deadlineDisplay: string;
+  progressValue: number;
+  progressColor: string;
+  hoursLeft: number;
+  minsLeft: number;
+}
+
 @Component({
   selector: 'app-user-dashboard',
   templateUrl: './user-dashboard.component.html',
@@ -28,6 +40,17 @@ export class UserDashboardComponent implements OnInit {
   goalsWithTasks: GoalWithTasks[] = [];
   loading: boolean = false;
   showDailyEntryModal: boolean = false;
+  nextTaskInfo: NextTaskInfo | null = null;
+  upcomingTasks: NextTaskInfo[] = [];
+  currentTaskIndex: number = 0;
+
+  // Drag/Swipe state
+  isDragging: boolean = false;
+  dragStartX: number = 0;
+  dragCurrentX: number = 0;
+  dragTranslateX: number = 0;
+  dragThreshold: number = 50;
+
 
   // Month selector
   months = [
@@ -115,6 +138,7 @@ export class UserDashboardComponent implements OnInit {
                     });
 
                     console.log('Final goalsWithTasks:', this.goalsWithTasks);
+                    this.calculateNextTask(tasksEntries);
                     this.loading = false;
                   },
               error: (error) => {
@@ -198,5 +222,163 @@ export class UserDashboardComponent implements OnInit {
   isToday(date: Date): boolean {
     const today = new Date();
     return date.toDateString() === today.toDateString();
+  }
+
+  calculateNextTask(tasksEntries: any[]): void {
+    if (!this.isToday(this.selectedDate)) {
+      this.nextTaskInfo = null;
+      this.upcomingTasks = [];
+      return;
+    }
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
+
+    // Get all incomplete tasks with lastTimeToComplete
+    const incompleteTasks: Array<{ task: Task; goalName: string; deadline: number }> = [];
+
+    for (const goalData of this.goalsWithTasks) {
+      for (const task of goalData.tasks) {
+        if (!task.lastTimeToComplete) continue;
+
+        // Check if task is completed
+        const taskEntry = tasksEntries.find(e => e.taskId === task.id);
+        if (taskEntry && taskEntry.value) continue; // Skip completed tasks
+
+        // Parse lastTimeToComplete (HH:mm format)
+        const [hours, minutes] = task.lastTimeToComplete.split(':').map(Number);
+        const deadlineMinutes = hours * 60 + minutes;
+
+        // Only include tasks that haven't passed deadline
+        if (deadlineMinutes >= currentTime) {
+          incompleteTasks.push({
+            task,
+            goalName: goalData.goal.name,
+            deadline: deadlineMinutes
+          });
+        }
+      }
+    }
+
+    if (incompleteTasks.length === 0) {
+      this.nextTaskInfo = null;
+      this.upcomingTasks = [];
+      return;
+    }
+
+    // Sort by deadline (earliest first)
+    incompleteTasks.sort((a, b) => a.deadline - b.deadline);
+
+    // Build upcoming tasks list
+    this.upcomingTasks = incompleteTasks.map(it => {
+      const deadlineMinutes = it.deadline;
+      const minutesLeft = deadlineMinutes - currentTime;
+
+      const hoursLeft = Math.max(0, Math.floor(minutesLeft / 60));
+      const minsLeft = Math.max(0, minutesLeft % 60);
+      let timeLeftDisplay = '';
+      if (minutesLeft > 0) {
+        if (hoursLeft > 0) {
+          timeLeftDisplay = `${hoursLeft} hour${hoursLeft > 1 ? 's' : ''}`;
+          if (minsLeft > 0) {
+            timeLeftDisplay += ` ${minsLeft} minute${minsLeft > 1 ? 's' : ''}`;
+          }
+        } else {
+          timeLeftDisplay = `${minsLeft} minute${minsLeft > 1 ? 's' : ''}`;
+        }
+        timeLeftDisplay += ' left';
+      } else {
+        timeLeftDisplay = '0 minute left';
+      }
+
+      const deadlineHours = Math.floor(deadlineMinutes / 60);
+      const deadlineMins = deadlineMinutes % 60;
+      const deadlineDisplay = `${String(deadlineHours).padStart(2, '0')}:${String(deadlineMins).padStart(2, '0')}`;
+
+
+      // Progress bar: visually match urgency
+      let progressValue = 100;
+      let progressColor = '#4caf50'; // green
+      if (minutesLeft <= 15) {
+        progressValue = 10;
+        progressColor = '#f44336'; // red
+      } else if (minutesLeft <= 30) {
+        progressValue = 30;
+        progressColor = '#ff9800'; // orange
+      } else if (minutesLeft <= 60) {
+        progressValue = 60;
+        progressColor = '#ffeb3b'; // yellow
+      }
+
+      return {
+        task: it.task,
+        goalName: it.goalName,
+        timeLeftDisplay,
+        deadlineDisplay,
+        progressValue,
+        progressColor,
+        hoursLeft,
+        minsLeft
+      } as NextTaskInfo;
+    });
+
+    this.currentTaskIndex = 0;
+    this.updateDisplayedTask();
+  }
+
+  private updateDisplayedTask(): void {
+    if (this.upcomingTasks.length === 0) {
+      this.nextTaskInfo = null;
+      return;
+    }
+    const clampedIndex = Math.max(0, Math.min(this.currentTaskIndex, this.upcomingTasks.length - 1));
+    this.currentTaskIndex = clampedIndex;
+    this.nextTaskInfo = this.upcomingTasks[this.currentTaskIndex];
+  }
+
+  goToNextTask(): void {
+    if (this.currentTaskIndex < this.upcomingTasks.length - 1) {
+      this.currentTaskIndex++;
+      this.updateDisplayedTask();
+    }
+  }
+
+  goToPrevTask(): void {
+    if (this.currentTaskIndex > 0) {
+      this.currentTaskIndex--;
+      this.updateDisplayedTask();
+    }
+  }
+
+  // Pointer events for swipe/drag on both touch and desktop
+  onPointerDown(event: PointerEvent): void {
+    this.isDragging = true;
+    this.dragStartX = event.clientX;
+    this.dragCurrentX = event.clientX;
+    this.dragTranslateX = 0;
+  }
+
+  onPointerMove(event: PointerEvent): void {
+    if (!this.isDragging) return;
+    this.dragCurrentX = event.clientX;
+    this.dragTranslateX = this.dragCurrentX - this.dragStartX;
+  }
+
+  onPointerUp(event: PointerEvent): void {
+    if (!this.isDragging) return;
+    const deltaX = this.dragTranslateX;
+    this.isDragging = false;
+    this.dragTranslateX = 0;
+
+    if (deltaX <= -this.dragThreshold) {
+      this.goToNextTask();
+    } else if (deltaX >= this.dragThreshold) {
+      this.goToPrevTask();
+    }
+  }
+
+  onPointerCancel(): void {
+    this.isDragging = false;
+    this.dragTranslateX = 0;
   }
 }

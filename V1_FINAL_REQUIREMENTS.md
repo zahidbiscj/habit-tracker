@@ -1,3 +1,49 @@
+# Next Task Widget & Progress Bar (Dashboard)
+
+### Feature Overview
+The Next Task widget is always displayed at the top of the user dashboard. It shows the most urgent incomplete task for today, with a modern countdown box and a color-coded progress bar to indicate urgency.
+
+#### UI Example
+```
+┌───────────────────────────────────────────────┐
+│   Next Task                                  │
+│   ──────────────                             │
+│   Dhuhr Prayer                              │
+│   ┌───────────────┬───────────────┐          │
+│   │   02   :   07 │   Left        │          │
+│   │   Hour  Minute│               │          │
+│   └───────────────┴───────────────┘          │
+│   [Progress bar: color & width]              │
+│   [Swipe →]                                  │
+└───────────────────────────────────────────────┘
+```
+
+#### Progress Bar Logic
+- **Color & Width reflect urgency:**
+  - Green (100% width): More than 1 hour left
+  - Yellow (60% width): 30–60 minutes left
+  - Orange (30% width): 15–30 minutes left
+  - Red (10% width): Less than 15 minutes left
+- The bar shrinks and changes color as time runs out.
+
+#### Countdown Box
+- Shows time left in large digits: `02 : 07 Left`
+- Labels below: `Hour Minute`
+- Visually distinct, modern UI for mobile and desktop
+
+#### Interactivity
+- User can swipe/drag the card to see the next task in sequence
+- If all tasks are complete, shows "All tasks complete! 🎉"
+
+#### Technical Implementation
+- Progress bar and countdown box are implemented in Angular with custom CSS
+- Progress bar color and width are dynamically calculated based on time left
+- Countdown box displays hours and minutes, updating in real time
+
+#### Benefits
+- Helps users focus on the most urgent task
+- Encourages timely completion with visible countdown and urgency indicator
+- Mobile-friendly, swipeable card UI for easy navigation
 ## 🔔 Notification Push (FCM) — UI & Trigger
 
 ### Notification UI (Tray)
@@ -100,20 +146,39 @@ providers: [
 - Clicking a day opens the daily log for that date.
 - Header shows the month and navigation arrows.
 
-### Dashboard (User Overview)
+
+### Dashboard (User Overview & Next Task Widget)
 ```
 ┌──────────────────────────────────────────────┐
 │ December 2025 Overview                      │
 ├──────────────────────────────────────────────┤
-│ 13/15 tasks completed (87%)                 │
-│ [Progress bar]                              │
-│ [List of goals and completion %]            │
+│ ┌──────────────────────────────────────────┐ │
+│ │ Next Task Widget                        │ │
+│ │ ──────────────                          │ │
+│ │ Dhuhr Prayer                           │ │
+│ │ ┌───────────────┬───────────────┐       │ │
+│ │ │   02   :   07 │   Left         │       │ │
+│ │ │   Hour  Minute│                │       │ │
+│ │ └───────────────┴───────────────┘       │ │
+│ │ [Progress bar: color & width]           │ │
+│ │ [Swipe →]                               │ │
+│ └──────────────────────────────────────────┘ │
+│                                            │
+│ 13/15 tasks completed (87%)                │
+│ [Progress bar]                             │
+│ [List of goals and completion %]           │
 └──────────────────────────────────────────────┘
 ```
 **What it does:**
 - Shows a summary for the current month up to today.
 - Displays total tasks assigned and completed for the user.
 - Shows a progress bar and a breakdown by goal.
+- Displays the Next Task widget at the top, with:
+  - Task name
+  - Modern countdown box (hours/minutes left)
+  - Color-coded progress bar (urgency)
+  - Swipe/drag navigation for next tasks
+  - "All tasks complete!" message when done
 
 ---
 
@@ -168,19 +233,20 @@ A simple habit tracking web application where admins create goals/tasks and user
 | updatedBy    | string    | User ID who last updated this goal   |
 
 ### Task
-| Field           | Type      | Description                          |
-|-----------------|-----------|--------------------------------------|
-| id              | string    | Unique task ID                       |
-| goalId          | string    | Foreign key to Goal                  |
-| name            | string    | Task name                            |
-| type            | string    | 'boolean' (Yes/No)                   |
-| additionalNotes | string    | Optional notes (e.g., time, context) |
-| position        | number    | Display order within goal            |
-| active          | boolean   | Whether task is active               |
-| createdDate     | timestamp | When task was created                |
-| updatedDate     | timestamp | Last update timestamp                |
-| createdBy       | string    | User ID who created this task        |
-| updatedBy       | string    | User ID who last updated this task   |
+| Field              | Type      | Description                                 |
+|--------------------|-----------|---------------------------------------------|
+| id                 | string    | Unique task ID                              |
+| goalId             | string    | Foreign key to Goal                         |
+| name               | string    | Task name                                   |
+| type               | string    | 'boolean' (Yes/No)                          |
+| additionalNotes    | string    | Optional notes (e.g., time, context)        |
+| position           | number    | Display order within goal                   |
+| lastTimeToComplete | string    | Last time to complete task (HH:mm, e.g. 14:00) |
+| active             | boolean   | Whether task is active                      |
+| createdDate        | timestamp | When task was created                       |
+| updatedDate        | timestamp | Last update timestamp                       |
+| createdBy          | string    | User ID who created this task               |
+| updatedBy          | string    | User ID who last updated this task          |
 
 ### GoalAssignment
 | Field        | Type      | Description                          |
@@ -1116,82 +1182,86 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 
 ---
 
-### 2. Create Goal Page
-**Route**: `/admin/goals/create`
+### 2. Create/Edit Goal Page (with LastTimeToComplete)
+**Route**: `/admin/goals/create` or `/admin/goals/edit/:goalId`
 
 **UI**:
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Create New Goal                   [Save]     │
+│  Create/Edit Goal                   [Save]     │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
-│ 📅 Select Goal Period                                   │
-│ ┌────────────────────────────────────────────────────┐ │
-│ │ ← December 2025 →                                  │ │
-│ │ Sun  Mon  Tue  Wed  Thu  Fri  Sat                 │ │
-│ │  1    2    3    4    5    6    7                  │ │
-│ │  8    9   10   11   12   13   14                  │ │
-│ │ 15   16   17   18   19   20   21                  │ │
-│ │ 22   23   24   25   26   27   28                  │ │
-│ │ 29   30   31                                       │ │
-│ └────────────────────────────────────────────────────┘ │
-│                                                          │
-│ ┌─ Goals on Dec 15 ────────────────────────────────┐   │
-│ │ 1. On Time Salah (Dec 1-31)                      │   │
-│ │ 2. 10 Minute Quran (Dec 10-20)                   │   │
-│ │ ... [View All 5 Goals] ←────────────────────────┐│   │
-│ └──────────────────────────────────────────────────┘   │
-│                                                          │
-│ Instructions: Click to select start date, then click    │
-│ another date to select end date. Click any date to      │
-│ view first 2 goals. Click 'View All' for complete list. │
-│                                                          │
-│ Goal Name *                                             │
-│ [_______________________________________________]        │
-│                                                          │
-│ Description                                             │
-│ [_______________________________________________]        │
-│ [_______________________________________________]        │
-│                                                          │
-│ Start Date * (Auto-filled from calendar)                │
-│ [📅 2025-12-08] (Read-only)                            │
-│                                                          │
-│ End Date (Auto-filled from calendar)                    │
-│ [📅 2025-12-22] (Read-only)                            │
+│ ...existing code...                                       │
 │                                                          │
 ├─────────────────────────────────────────────────────────┤
 │ Tasks (Manual Entry) *                                  │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
-│ ┌─────────────────────────────────────────────────┐    │
-│ │ Task 1                                          │    │
-│ │ Name: [Fajr Prayer___________________]         │    │
-│ │ Notes: [5:30 AM_____________________]          │    │
-│ │ [Remove]                                        │    │
-│ └─────────────────────────────────────────────────┘    │
+│ ┌──────────────────────────────────────────────────────────────┐    │
+│ │ Task 1                                                      │    │
+│ │ Name: [Fajr Prayer___________________]                      │    │
+│ │ Last Time (short label): [08:00 AM_____]                    │    │
+│ │ Notes: [5:30 AM_____________________]                       │    │
+│ │ [Remove]                                                    │    │
+│ └──────────────────────────────────────────────────────────────┘    │
 │                                                          │
-│ ┌─────────────────────────────────────────────────┐    │
-│ │ Task 2                                          │    │
-│ │ Name: [Dhuhr Prayer__________________]         │    │
-│ │ Notes: [1:00 PM_____________________]          │    │
-│ │ [Remove]                                        │    │
-│ └─────────────────────────────────────────────────┘    │
+│ ┌──────────────────────────────────────────────────────────────┐    │
+│ │ Task 2                                                      │    │
+│ │ Name: [Dhuhr Prayer__________________]                      │    │
+│ │ Last Time (short label): [01:30 PM_____]                    │    │
+│ │ Notes: [1:00 PM_____________________]                       │    │
+│ │ [Remove]                                                    │    │
+│ └──────────────────────────────────────────────────────────────┘    │
 │                                                          │
 │ [+ Add Another Task]                                    │
 │                                                          │
-├─────────────────────────────────────────────────────────┤
-│ Assign to Users *                                       │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│ [✓] Select All                                          │
-│ [ ] Ahmad (ahmad@email.com)                             │
-│ [✓] Fatima (fatima@email.com)                           │
-│ [ ] Ibrahim (ibrahim@email.com)                         │
-│                                                          │
-│         [Cancel]           [Save & Assign Goal]         │
-│                                                          │
+│ ...existing code...                                       │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**How it works:**
+- When creating or editing a goal, each task now includes a "Last Time to Complete" field (short label, e.g., "08:00 AM").
+- This field is required for each task and is used to determine the deadline for daily completion.
+### Dashboard: Next Task Widget Card
+
+**Widget Purpose:**
+- Shows the next task the user needs to complete, with a countdown timer and quick info.
+- Allows user to swipe (right-to-left) to see the following task in sequence.
+
+**Design & Placement:**
+- The Next Task widget card is always displayed at the very top of the dashboard page, above all other dashboard content (calendar, stats, etc.).
+- The card is visually distinct (e.g., with a colored border or shadow) to draw attention.
+- The rest of the dashboard content appears below this card.
+
+**UI Example:**
+```
+┌───────────────────────────────────────────────┐
+│   Next Task                                  │
+│   ──────────────                             │
+│   Dhuhr Prayer                              │
+│   00:20:00 to complete                      │
+│   [Progress bar / timer]                    │
+│   [Swipe →]                                  │
+└───────────────────────────────────────────────┘
+```
+
+**Widget Information:**
+- Task name (e.g., "Dhuhr Prayer")
+- Time remaining to complete (e.g., "00:20:00 to complete")
+- Progress bar or countdown timer
+- Option to swipe right-to-left to show the next task in the sequence
+- (If all tasks for today are complete, show "All tasks complete! 🎉")
+
+**How it works:**
+- The widget determines the next incomplete task for the current day, based on the current time and each task's `lastTimeToComplete`.
+- Tasks are ordered by their `lastTimeToComplete` value.
+- The widget updates in real-time as tasks are completed or as time passes.
+- Swiping the card shows the next task in the list (sequentially for today).
+
+**Benefits:**
+- Helps users focus on the most urgent task.
+- Encourages timely completion with a visible countdown.
+- Mobile-friendly, swipeable card UI for easy navigation.
 
 **Calendar Features**:
 - **Month Navigation**: Use ← → arrows to navigate between months
@@ -1576,8 +1646,16 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 ### 1. Dashboard Page
 **Route**: `/user/dashboard`
 
-**UI**:
+**UI (with Next Task Widget at Top):**
 ```
+┌─────────────────────────────────────────────────────────┐
+│   Next Task                                            │
+│   ──────────────                                       │
+│   Dhuhr Prayer                                        │
+│   00:20:00 to complete                                │
+│   [Progress bar / timer]                              │
+│   [Swipe →]                                            │
+└─────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────┐
 │ Habit Tracker                       👤 Ahmad | Logout   │
 ├─────────────────────────────────────────────────────────┤
@@ -1609,6 +1687,11 @@ createGoalsFromImport(data: ParsedGoalData, options: ImportOptions): Observable<
 │ Bottom Nav: [🏠 Home] [📅 Calendar] [⚙️ Settings]      │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**Next Task Widget Card Placement:**
+- The Next Task widget card is always displayed at the very top of the dashboard page, above all other dashboard content (calendar, stats, etc.).
+- The card is visually distinct (e.g., with a colored border or shadow) to draw attention.
+- The rest of the dashboard content appears below this card.
 
 **Badge Status Indicators**:
 - ✓ = Completed (Yes)
