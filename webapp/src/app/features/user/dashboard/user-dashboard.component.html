@@ -11,17 +11,30 @@
                     (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" tabindex="0" role="region"
                     aria-label="Next Task Carousel">
                     <div class="next-task-swipe-row">
-                        <div class="swipe-indicator-bar">
+                        <div
+                            style="width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 0.3rem; gap: 0.5rem;">
+                            <button (click)="goToPrevTask()" [disabled]="sliderValue <= 1"
+                                style="background: none; border: none; color: #ffe082; font-size: 3em; cursor: pointer;">&#8592;</button>
+                           <div class="swipe-indicator-bar">
                             <span class="index-indicator">{{ currentTaskIndex + 1 }}/{{ upcomingTasks.length }}</span>
                         </div>
+                            <button (click)="goToNextTask()" [disabled]="sliderValue >= upcomingTasks.length"
+                                style="background: none; border: none; color: #ffe082; font-size: 3em; cursor: pointer;">&#8594;</button>
+                        </div>
+
                     </div>
                     <div class="next-task-compact-row">
                         <div class="next-task-compact-title">Upcoming Task</div>
-                        <div class="next-task-compact-timer">
-                            <span class="countdown-hour">{{ nextTaskInfo.hoursLeft | number: '2.0' }}</span>
-                            <span class="countdown-sep">:</span>
-                            <span class="countdown-min">{{ nextTaskInfo.minsLeft | number: '2.0' }}</span>
-                            <span class="countdown-label">Left</span>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="next-task-compact-timer" style="justify-content: center;">
+                                <span class="countdown-hour">{{ nextTaskInfo.hoursLeft | number: '2.0' }}</span>
+                                <span class="countdown-sep">:</span>
+                                <span class="countdown-min">{{ nextTaskInfo.minsLeft | number: '2.0' }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 1.7rem; margin-top: 0.1rem;">
+                                <span style="font-size: 0.85rem; color: #e0e0e0; font-weight: 500;">Hour</span>
+                                <span style="font-size: 0.85rem; color: #e0e0e0; font-weight: 500;">Minute</span>
+                            </div>
                         </div>
                     </div>
                     <div class="next-task-compact-row">

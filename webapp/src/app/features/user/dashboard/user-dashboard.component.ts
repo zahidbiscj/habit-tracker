@@ -38,6 +38,7 @@ export class UserDashboardComponent implements OnInit {
   currentUserId: string = '';
   
   goalsWithTasks: GoalWithTasks[] = [];
+  sliderValue: number = 1;
   loading: boolean = false;
   showDailyEntryModal: boolean = false;
   nextTaskInfo: NextTaskInfo | null = null;
@@ -50,6 +51,12 @@ export class UserDashboardComponent implements OnInit {
   dragCurrentX: number = 0;
   dragTranslateX: number = 0;
   dragThreshold: number = 50;
+
+  onSliderChange(event: any): void {
+    const value = Number(event.target.value);
+    this.currentTaskIndex = value - 1;
+    this.updateDisplayedTask();
+  }
 
 
   // Month selector
