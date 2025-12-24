@@ -293,7 +293,16 @@ export class UserDashboardComponent implements OnInit {
 
       const deadlineHours = Math.floor(deadlineMinutes / 60);
       const deadlineMins = deadlineMinutes % 60;
-      const deadlineDisplay = `${String(deadlineHours).padStart(2, '0')}:${String(deadlineMins).padStart(2, '0')}`;
+      // Format deadline as hh:mm AM/PM
+      let ampm = 'AM';
+      let displayHour = deadlineHours;
+      if (displayHour === 0) {
+        displayHour = 12;
+      } else if (displayHour >= 12) {
+        ampm = 'PM';
+        if (displayHour > 12) displayHour -= 12;
+      }
+      const deadlineDisplay = `${displayHour}:${String(deadlineMins).padStart(2, '0')} ${ampm}`;
 
 
       // Progress bar: visually match urgency

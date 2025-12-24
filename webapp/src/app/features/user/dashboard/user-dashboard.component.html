@@ -10,46 +10,31 @@
                     (mouseleave)="onPointerCancel()" (touchstart)="onTouchStart($event)"
                     (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" tabindex="0" role="region"
                     aria-label="Next Task Carousel">
-                    <div class="next-task-label">Upcoming Task</div>
-
-                    <div class="next-task-label-deadline">
-                        <div class="next-task-name">{{ nextTaskInfo.task.name }}</div>
-                    </div>
-
-                    <div class="next-task-timer-row">
-                        <div class="countdown-box">
-                            <div class="countdown-digits">
-                                <span class="countdown-hour">{{ nextTaskInfo.hoursLeft | number: '2.0' }}</span>
-                                <span class="countdown-sep">:</span>
-                                <span class="countdown-min">{{ nextTaskInfo.minsLeft | number: '2.0' }}</span>
-                                <span class="countdown-label">Left</span>
-                            </div>
-                            <div class="countdown-labels">
-                                <span>Hour</span>
-                                <span>Minute</span>
-                            </div>
+                    <div class="next-task-compact-row">
+                        <div class="next-task-compact-title">Upcoming Task</div>
+                        <div class="next-task-compact-timer">
+                            <span class="countdown-hour">{{ nextTaskInfo.hoursLeft | number: '2.0' }}</span>
+                            <span class="countdown-sep">:</span>
+                            <span class="countdown-min">{{ nextTaskInfo.minsLeft | number: '2.0' }}</span>
+                            <span class="countdown-label">Left</span>
                         </div>
                     </div>
-                    <div class="next-task-progress">
-                        <div class="next-task-deadline">Deadline: {{ nextTaskInfo.deadlineDisplay }}</div>
-
-                        <div class="progress-bar">
-                            <div class="progress-fill" [style.width.%]="nextTaskInfo.progressValue"
-                                [style.background]="nextTaskInfo.progressColor"></div>
-                        </div>
+                    <div class="next-task-compact-row">
+                        <div class="next-task-compact-name">{{ nextTaskInfo.task.name }}</div>
+                        <div class="next-task-compact-deadline">Deadline: {{ nextTaskInfo.deadlineDisplay }}</div>
                     </div>
-                    <div class="next-task-swipe">
-                        <span>click/swipe here</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="nextTaskInfo.progressValue"
+                            [style.background]="nextTaskInfo.progressColor"></div>
+                    </div>
+                    <div class="next-task-swipe compact">
+                        <span>swipe to goto next task</span>
                         <span class="nav-buttons">
                             <button class="nav-btn-inline" (click)="goToPrevTask()" [disabled]="currentTaskIndex === 0"
-                                aria-label="Previous task">
-                                ←
-                            </button>
+                                aria-label="Previous task">←</button>
                             <span class="index-indicator">{{ currentTaskIndex + 1 }}/{{ upcomingTasks.length }}</span>
                             <button class="nav-btn-inline" (click)="goToNextTask()"
-                                [disabled]="currentTaskIndex >= upcomingTasks.length - 1" aria-label="Next task">
-                                →
-                            </button>
+                                [disabled]="currentTaskIndex >= upcomingTasks.length - 1" aria-label="Next task">→</button>
                         </span>
                     </div>
                 </div>

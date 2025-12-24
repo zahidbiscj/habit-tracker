@@ -1,3 +1,124 @@
+.next-task-card {
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(255, 224, 130, 0.55);
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-bottom: 0.5rem;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: 80px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.35rem 0.7rem 0.35rem 0.7rem !important;
+  box-shadow: 0 2px 12px 0 rgba(102, 126, 234, 0.10), 0 1.5px 6px 0 rgba(118, 75, 162, 0.10);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+/* --- Ultra Compact Next Task Widget --- */
+.next-task-compact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.1rem;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.next-task-compact-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+.next-task-compact-timer {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffe082;
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+.next-task-compact-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fffde7;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.next-task-compact-deadline {
+  font-size: 10px;
+  color: #ffe082;
+  margin: 0 0 0 0.5rem;
+  white-space: nowrap;
+}
+.next-task-swipe.compact {
+  font-size: 10px;
+  margin: 0.1rem 0 0 0;
+  padding: 0;
+}
+/* --- Compact Next Task Widget --- */
+.next-task-card {
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(255, 224, 130, 0.55);
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-bottom: 0.5rem;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: 80px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.7rem 1.1rem 0.7rem 1.1rem !important;
+  box-shadow: 0 2px 12px 0 rgba(102, 126, 234, 0.10), 0 1.5px 6px 0 rgba(118, 75, 162, 0.10);
+  transition: box-shadow 0.2s, border-color 0.2s;
+  font-size: 11px !important;
+  gap: 0.1rem !important;
+}
+.next-task-label,
+.next-task-label-deadline,
+.next-task-timer-row,
+.next-task-progress,
+.next-task-swipe {
+  margin: 0 !important;
+  gap: 0.1rem !important;
+}
+.next-task-name {
+  font-size: 11px !important;
+  font-weight: 600;
+  margin: 0 !important;
+}
+.countdown-box {
+  min-width: 60px !important;
+  margin-right: 0.3rem !important;
+}
+.countdown-digits {
+  font-size: 1.1rem !important;
+  gap: 0.1rem !important;
+  margin-bottom: 0 !important;
+}
+.countdown-labels {
+  font-size: 0.7rem !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0 !important;
+}
+.progress-bar {
+  height: 4px !important;
+  margin-bottom: 0.05rem !important;
+}
+.next-task-deadline {
+  font-size: 10px !important;
+  margin: 0 !important;
+}
 /* Modern Countdown Box for Next Task */
 .countdown-box {
   display: flex;
