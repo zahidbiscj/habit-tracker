@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationFirebaseService } from '../../../core/services/firebase/notification-firebase.service';
 import { Notification } from '../../../core/models/notification.model';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-notifications-list',
@@ -14,7 +15,8 @@ export class NotificationsListComponent implements OnInit {
 
   constructor(
     private notificationService: NotificationFirebaseService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -30,7 +32,7 @@ export class NotificationsListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading notifications:', error);
-        alert('Failed to load notifications');
+        this.toast.error('Failed to load notifications');
         this.loading = false;
       }
     });
@@ -51,12 +53,12 @@ export class NotificationsListComponent implements OnInit {
 
     this.notificationService.deleteNotification(notification.id).subscribe({
       next: () => {
-        alert('Notification deleted successfully');
+        this.toast.success('Notification deleted successfully');
         this.loadNotifications();
       },
       error: (error) => {
         console.error('Error deleting notification:', error);
-        alert('Failed to delete notification');
+        this.toast.error('Failed to delete notification');
       }
     });
   }

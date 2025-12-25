@@ -9,6 +9,7 @@ export interface Task {
   additionalNotes: string;
   position: number;
   lastTimeToComplete: string; // HH:mm format, e.g., '14:00'
+  days?: string[]; // Optional days of week e.g., ['monday','friday']
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -24,6 +25,7 @@ export class TaskModel implements Task {
   additionalNotes: string;
   position: number;
   lastTimeToComplete: string;
+  days?: string[];
   active: boolean;
   createdDate: Date;
   updatedDate: Date;
@@ -38,6 +40,7 @@ export class TaskModel implements Task {
     this.additionalNotes = data.additionalNotes || '';
     this.position = data.position || 0;
     this.lastTimeToComplete = data.lastTimeToComplete || '';
+    this.days = (data as any).days || [];
     this.active = data.active !== undefined ? data.active : true;
     this.createdDate = data.createdDate || new Date();
     this.updatedDate = data.updatedDate || new Date();
@@ -54,6 +57,7 @@ export class TaskModel implements Task {
       additionalNotes: data.additionalNotes,
       position: data.position,
       lastTimeToComplete: data.lastTimeToComplete || '',
+      days: Array.isArray(data.days) ? data.days : [],
       active: data.active,
       createdDate: data.createdDate?.toDate() || new Date(),
       updatedDate: data.updatedDate?.toDate() || new Date(),
@@ -70,6 +74,7 @@ export class TaskModel implements Task {
       additionalNotes: this.additionalNotes,
       position: this.position,
       lastTimeToComplete: this.lastTimeToComplete,
+      days: this.days || [],
       active: this.active,
       createdDate: this.createdDate,
       updatedDate: this.updatedDate,

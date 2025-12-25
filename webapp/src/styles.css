@@ -359,6 +359,76 @@ textarea {
   font-family: var(--font-family);
 }
 
+/* PrimeNG Toast - Responsive & Mobile-Friendly */
+.p-toast {
+  z-index: var(--z-popover);
+}
+
+.p-toast .p-toast-message .p-toast-message-icon {
+  margin-right: 0.85em;
+  font-size: 1.5em;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.p-toast.p-toast-top-right {
+  top: 16px;
+  right: 16px;
+  max-width: 380px; /* keep a neat desktop width */
+}
+
+.p-toast .p-toast-message {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 8px;
+}
+
+.p-toast .p-toast-message-content {
+  padding: 0.75rem 0.85rem;
+}
+
+.p-toast .p-toast-summary {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.p-toast .p-toast-detail {
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .p-toast.p-toast-top-right {
+    top: 8px;
+    right: 8px;
+    left: 8px;            /* stretch within viewport */
+    max-width: none;
+    width: auto;
+  }
+
+  .p-toast .p-toast-message {
+    width: 100%;
+    margin: 0 0 8px 0;    /* stack nicely */
+  }
+
+  .p-toast .p-toast-message-content {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .p-toast .p-toast-message .p-toast-message-icon {
+    margin-right: 0.65em;
+    font-size: 1.2em;
+  }
+  .p-toast .p-toast-summary {
+    font-size: 0.95rem;
+  }
+
+  .p-toast .p-toast-detail {
+    font-size: 0.875rem;
+  }
+}
+
 /* Loading Spinner */
 .spinner {
   display: inline-block;

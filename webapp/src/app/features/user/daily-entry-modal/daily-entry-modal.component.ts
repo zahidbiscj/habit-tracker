@@ -4,6 +4,7 @@ import { AuthFirebaseService } from '../../../core/services/firebase/auth-fireba
 import { DailyTaskEntry, DailyLog } from '../../../core/models/daily-log.model';
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
+import { ToastService } from '../../../core/services/toast.service';
 //
 
 interface GoalWithTasks {
@@ -39,7 +40,8 @@ export class DailyEntryModalComponent implements OnInit {
 
   constructor(
     private dailyLogService: DailyLogFirebaseService,
-    private authService: AuthFirebaseService
+    private authService: AuthFirebaseService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -127,7 +129,7 @@ export class DailyEntryModalComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error saving logs:', error);
-        alert('Failed to save entries. Please try again.');
+        this.toast.error('Failed to save entries. Please try again.');
         this.saving = false;
       }
     });

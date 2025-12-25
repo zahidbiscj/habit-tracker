@@ -31,7 +31,7 @@ service cloud.firestore {
     }
 
     match /dailyLogs/{logId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
       allow update: if isAuthenticated() && isOwner(resource.data.userId);
       allow delete: if isAdmin();

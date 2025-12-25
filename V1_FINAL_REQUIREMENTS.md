@@ -242,11 +242,26 @@ A simple habit tracking web application where admins create goals/tasks and user
 | additionalNotes    | string    | Optional notes (e.g., time, context)        |
 | position           | number    | Display order within goal                   |
 | lastTimeToComplete | string    | Last time to complete task (HH:mm, e.g. 14:00) |
+| days               | array     | (Optional) Days of week for this task (e.g., ['monday', 'friday']) |
 | active             | boolean   | Whether task is active                      |
 | createdDate        | timestamp | When task was created                       |
 | updatedDate        | timestamp | Last update timestamp                       |
 | createdBy          | string    | User ID who created this task               |
 | updatedBy          | string    | User ID who last updated this task          |
+
+#### Task Day Assignment Enhancement
+
+- Each task can optionally specify one or more days of the week (e.g., Monday, Friday) in the `days` field.
+- When a goal is created with a startDate and endDate, the system checks which dates in that range match the selected days for each task.
+- The task is only assigned to the user on those specific dates.
+  - Example: If a goal runs from 22nd to 28th and a task has days = ["monday", "friday"], and 23rd is Monday, 28th is Friday, then the task is assigned only on 23rd and 28th.
+- If no days are specified, the task is assigned every day in the date range (default behavior).
+
+**Assignment Logic (Simplified):**
+1. For each date between startDate and endDate:
+    - If the task's `days` array is empty or not set, assign the task for that date.
+    - If the task's `days` array includes the day of week for that date (e.g., 'monday'), assign the task for that date.
+2. Result: The user only sees the task on the dashboard and in daily logs for the matching days.
 
 ### GoalAssignment
 | Field        | Type      | Description                          |
@@ -855,6 +870,23 @@ Gym Workout,Cardio,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE
     3. If found (exact match) → SAME TASK (skip creation, import logs only)
     4. If not found → NEW TASK (create under existing goal)
   ```
+
+---
+
+### 🚨 CRITICAL LOGIC: Non-Breakable Rules for Goal/Task Assignment & Filtering
+
+> **The following rules MUST be enforced in all code, UI, and import/export logic. Any violation is a bug.**
+
+1. **A task is only visible/assigned on a date if:**
+  - The parent goal is active on that date (date is between goal.startDate and goal.endDate, inclusive, and goal.active is true)
+  - AND the task is active (task.active is true)
+  - AND (the task's `days` array is empty/not set, OR the day-of-week for the date matches a value in the task's `days` array, case-insensitive)
+2. **If a goal has no visible tasks for a given date, it must NOT appear in any UI or export for that date.**
+3. **All filtering, display, and export logic must use a single shared function (e.g., `isTaskVisibleOnDate(task, goal, date)`) to determine if a task is shown.**
+4. **No code may bypass these checks, even for admin or import/export.**
+5. **Tests must verify that tasks/goals never appear on dates they should not, and always appear when they should.**
+
+---
 
 **3. Example Scenarios**:
 ```

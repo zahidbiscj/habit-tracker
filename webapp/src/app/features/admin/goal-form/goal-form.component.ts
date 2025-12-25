@@ -10,6 +10,7 @@ import { Task } from '../../../core/models/task.model';
 import { User } from '../../../core/models/user.model';
 import { forkJoin, of, throwError } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface TaskInput {
   tempId: string;
@@ -17,6 +18,7 @@ interface TaskInput {
   name: string;
   lastTimeToComplete: string;
   additionalNotes: string;
+  days: string[];
 }
 
 @Component({
@@ -41,6 +43,15 @@ export class GoalFormComponent implements OnInit {
   
   loading: boolean = false;
   currentUserId: string = '';
+  dayOptions: { key: string; label: string }[] = [
+    { key: 'monday', label: 'Mon' },
+    { key: 'tuesday', label: 'Tue' },
+    { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' },
+    { key: 'friday', label: 'Fri' },
+    { key: 'saturday', label: 'Sat' },
+    { key: 'sunday', label: 'Sun' },
+  ];
 
   constructor(
     private route: ActivatedRoute,
@@ -49,7 +60,8 @@ export class GoalFormComponent implements OnInit {
     private taskService: TaskFirebaseService,
     private userService: UserFirebaseService,
     private goalAssignmentService: GoalAssignmentFirebaseService,
-    private authService: AuthFirebaseService
+    private authService: AuthFirebaseService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -104,7 +116,8 @@ export class GoalFormComponent implements OnInit {
             id: task.id,
             name: task.name,
             lastTimeToComplete: task.lastTimeToComplete || '',
-            additionalNotes: task.additionalNotes || ''
+            additionalNotes: task.additionalNotes || '',
+            days: Array.isArray((task as any).days) ? (task as any).days : []
           }));
           
           this.selectedUserIds = result.assignments.map(a => a.userId);
@@ -112,7 +125,7 @@ export class GoalFormComponent implements OnInit {
           console.log('Available users:', this.users);
         } else {
           console.error('Goal not found');
-          alert('Goal not found');
+          this.toast.error('Goal not found');
           this.router.navigate(['/admin/goals']);
         }
         this.loading = false;
@@ -121,7 +134,7 @@ export class GoalFormComponent implements OnInit {
         console.error('Error loading goal:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
         this.loading = false;
-        alert('Failed to load goal: ' + (error.message || 'Unknown error'));
+        this.toast.error('Failed to load goal: ' + (error.message || 'Unknown error'));
         this.router.navigate(['/admin/goals']);
       }
     });
@@ -132,7 +145,8 @@ export class GoalFormComponent implements OnInit {
       tempId: `task_${Date.now()}`,
       name: '',
       lastTimeToComplete: '',
-      additionalNotes: ''
+      additionalNotes: '',
+      days: []
     });
   }
 
@@ -140,30 +154,30 @@ export class GoalFormComponent implements OnInit {
     if (this.tasks.length > 1) {
       this.tasks.splice(index, 1);
     } else {
-      alert('At least one task is required');
+      this.toast.warn('At least one task is required');
     }
   }
 
   onSubmit(): void {
     // Validation
     if (!this.goalName.trim()) {
-      alert('Goal name is required');
+      this.toast.warn('Goal name is required');
       return;
     }
 
     if (!this.startDate) {
-      alert('Start date is required');
+      this.toast.warn('Start date is required');
       return;
     }
 
     if (this.tasks.length === 0) {
-      alert('At least one task is required');
+      this.toast.warn('At least one task is required');
       return;
     }
 
     for (let i = 0; i < this.tasks.length; i++) {
       if (!this.tasks[i].name.trim()) {
-        alert(`Task ${i + 1} name is required`);
+        this.toast.warn(`Task ${i + 1} name is required`);
         return;
       }
     }
@@ -200,6 +214,7 @@ export class GoalFormComponent implements OnInit {
           name: task.name.trim(),
           lastTimeToComplete: task.lastTimeToComplete.trim(),
           additionalNotes: task.additionalNotes.trim(),
+          days: task.days || [],
           position: index,
           type: 'boolean' as const,
           active: true,
@@ -216,32 +231,32 @@ export class GoalFormComponent implements OnInit {
               this.goalAssignmentService.assignGoalToUsers(goal.id, this.selectedUserIds, this.currentUserId).subscribe({
                 next: () => {
                   this.loading = false;
-                  alert('Goal created successfully');
+                  this.toast.success('Goal created successfully');
                   this.router.navigate(['/admin/goals']);
                 },
                 error: (error) => {
                   console.error('Error creating assignments:', error);
                   this.loading = false;
-                  alert('Goal created but failed to assign users');
+                  this.toast.warn('Goal created but failed to assign users');
                 }
               });
             } else {
               this.loading = false;
-              alert('Goal created successfully');
+              this.toast.success('Goal created successfully');
               this.router.navigate(['/admin/goals']);
             }
           },
           error: (error) => {
             console.error('Error creating tasks:', error);
             this.loading = false;
-            alert('Goal created but failed to create tasks');
+            this.toast.warn('Goal created but failed to create tasks');
           }
         });
       },
       error: (error) => {
         console.error('Error creating goal:', error);
         this.loading = false;
-        alert('Failed to create goal');
+        this.toast.error('Failed to create goal');
       }
     });
   }
@@ -254,7 +269,7 @@ export class GoalFormComponent implements OnInit {
       .pipe(
         switchMap(currentGoal => {
           if (!currentGoal) {
-            alert('Goal not found');
+            this.toast.error('Goal not found');
             this.loading = false;
             return throwError(() => new Error('Goal not found'));
           }
@@ -288,6 +303,7 @@ export class GoalFormComponent implements OnInit {
                     name: task.name.trim(),
                     lastTimeToComplete: task.lastTimeToComplete.trim(),
                     additionalNotes: task.additionalNotes.trim(),
+                    days: task.days || [],
                     position: index,
                     updatedDate: new Date(),
                     updatedBy: this.currentUserId
@@ -299,6 +315,7 @@ export class GoalFormComponent implements OnInit {
                     name: task.name.trim(),
                     lastTimeToComplete: task.lastTimeToComplete.trim(),
                     additionalNotes: task.additionalNotes.trim(),
+                    days: task.days || [],
                     position: index,
                     type: 'boolean',
                     active: true,
@@ -342,13 +359,13 @@ export class GoalFormComponent implements OnInit {
       .subscribe({
         next: () => {
           this.loading = false;
-          alert('Goal updated successfully');
+          this.toast.success('Goal updated successfully');
           this.router.navigate(['/admin/goals']);
         },
         error: (error) => {
           console.error('Error updating goal:', error);
           this.loading = false;
-          alert('Failed to update goal');
+          this.toast.error('Failed to update goal');
         }
       });
   }
@@ -372,5 +389,16 @@ export class GoalFormComponent implements OnInit {
 
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+
+  onToggleDay(task: TaskInput, dayKey: string, checked: boolean): void {
+    const current = task.days ? [...task.days] : [];
+    if (checked) {
+      if (!current.includes(dayKey)) current.push(dayKey);
+    } else {
+      const idx = current.indexOf(dayKey);
+      if (idx > -1) current.splice(idx, 1);
+    }
+    task.days = current;
   }
 }

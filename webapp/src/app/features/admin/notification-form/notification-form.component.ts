@@ -4,6 +4,7 @@ import { NotificationFirebaseService } from '../../../core/services/firebase/not
 import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
 import { BrowserNotificationService } from '../../../core/services/browser-notification.service';
 import { Notification, NotificationModel } from '../../../core/models/notification.model';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-notification-form',
@@ -32,7 +33,8 @@ export class NotificationFormComponent implements OnInit {
     private router: Router,
     private notificationService: NotificationFirebaseService,
     private authService: AuthFirebaseService,
-    private browserNotification: BrowserNotificationService
+    private browserNotification: BrowserNotificationService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -58,7 +60,7 @@ export class NotificationFormComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading notification:', error);
-        alert('Failed to load notification');
+        this.toast.error('Failed to load notification');
         this.loading = false;
       }
     });
@@ -89,12 +91,12 @@ export class NotificationFormComponent implements OnInit {
     if (this.isEditMode) {
       this.notificationService.updateNotification(this.notification).subscribe({
         next: () => {
-          alert('Notification updated successfully!');
+          this.toast.success('Notification updated successfully!');
           this.router.navigate(['/admin/notifications']);
         },
         error: (error) => {
           console.error('Error updating notification:', error);
-          alert('Failed to update notification');
+          this.toast.error('Failed to update notification');
           this.loading = false;
         }
       });
@@ -124,7 +126,7 @@ export class NotificationFormComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating notification:', error);
-          alert('Failed to create notification: ' + (error.message || 'Unknown error'));
+          this.toast.error('Failed to create notification: ' + (error.message || 'Unknown error'));
           this.loading = false;
         }
       });
@@ -133,38 +135,38 @@ export class NotificationFormComponent implements OnInit {
 
   validateForm(): boolean {
     if (!this.notification.title.trim()) {
-      alert('Please enter a title');
+      this.toast.warn('Please enter a title');
       return false;
     }
 
     if (this.notification.title.length > 100) {
-      alert('Title must be 100 characters or less');
+      this.toast.warn('Title must be 100 characters or less');
       return false;
     }
 
     if (!this.notification.body.trim()) {
-      alert('Please enter a message');
+      this.toast.warn('Please enter a message');
       return false;
     }
 
     if (this.notification.body.length > 500) {
-      alert('Message must be 500 characters or less');
+      this.toast.warn('Message must be 500 characters or less');
       return false;
     }
 
     if (!this.notification.time.trim()) {
-      alert('Please enter a time');
+      this.toast.warn('Please enter a time');
       return false;
     }
 
     const timePattern = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timePattern.test(this.notification.time)) {
-      alert('Please enter a valid time in HH:mm format (00:00 to 23:59)');
+      this.toast.warn('Please enter a valid time in HH:mm format (00:00 to 23:59)');
       return false;
     }
 
     if (this.notification.daysOfWeek.length === 0) {
-      alert('Please select at least one day of the week');
+      this.toast.warn('Please select at least one day of the week');
       return false;
     }
 
@@ -193,9 +195,8 @@ export class NotificationFormComponent implements OnInit {
           requireInteraction: true
         }).subscribe(success => {
           if (success) {
-            alert(
-              '✅ Test notification sent!\n\n' +
-              'Did you see the notification?\n\n' +
+            this.toast.success(
+              'Test notification sent!\nDid you see the notification?\n\n' +
               'The real notification will appear:\n' +
               `• Time: ${notification.time}\n` +
               `• Days: ${this.getDaysString(notification.daysOfWeek)}\n\n` +
@@ -203,13 +204,13 @@ export class NotificationFormComponent implements OnInit {
             );
             this.router.navigate(['/admin/notifications']);
           } else {
-            alert('Failed to show test notification. Please check browser permissions.');
+            this.toast.error('Failed to show test notification. Please check browser permissions.');
             this.router.navigate(['/admin/notifications']);
           }
         });
       } else {
-        alert(
-          `❌ Notification permission: ${permission}\n\n` +
+        this.toast.error(
+          `Notification permission: ${permission}\n\n` +
           'Please enable notifications in your browser settings to test.'
         );
         this.router.navigate(['/admin/notifications']);

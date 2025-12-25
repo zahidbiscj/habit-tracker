@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AuthFirebaseService } from './core/services/firebase/auth-firebase.service';
 import { User } from './core/models/user.model';
 import { MessagingFirebaseService } from './core/services/firebase/messaging-firebase.service';
+import { ToastService } from './core/services/toast.service';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -21,7 +22,8 @@ export class AppComponent implements OnInit {
   constructor(
     private authService: AuthFirebaseService,
     public router: Router,
-    private messagingService: MessagingFirebaseService
+    private messagingService: MessagingFirebaseService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -60,7 +62,7 @@ export class AppComponent implements OnInit {
         },
         error: (error) => {
           console.error('Logout error:', error);
-          alert('Failed to logout');
+          this.toast.error('Failed to logout');
         }
       });
     }

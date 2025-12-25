@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -15,7 +16,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthFirebaseService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {}
 
   onLogin(): void {
@@ -56,7 +58,7 @@ export class LoginComponent {
     this.authService.resetPassword(this.email).subscribe({
       next: () => {
         this.loading = false;
-        alert('Password reset email sent. Please check your inbox.');
+        this.toast.success('Password reset email sent. Please check your inbox.');
       },
       error: (error) => {
         this.loading = false;

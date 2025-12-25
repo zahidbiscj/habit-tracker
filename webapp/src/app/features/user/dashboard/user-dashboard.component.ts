@@ -8,6 +8,7 @@ import { DailyLogFirebaseService } from '../../../core/services/firebase/daily-l
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
 import { forkJoin, from } from 'rxjs';
+import { isTaskVisibleOnDate } from '../../../core/utils/schedule.util';
 
 interface GoalWithTasks {
   goal: Goal;
@@ -127,22 +128,28 @@ export class UserDashboardComponent implements OnInit {
                   next: (dailyLog) => {
                     console.log('Loaded aggregated daily log:', dailyLog);
                     const tasksEntries = dailyLog?.tasks || [];
-                    this.goalsWithTasks = results.map(result => {
-                      const goalTaskIds = new Set(result.tasks.map(t => t.id));
-                      const entriesForGoal = tasksEntries.filter(e => goalTaskIds.has(e.taskId));
-                      const completedCount = entriesForGoal.filter(e => !!e.value).length;
-                      const totalTasks = result.tasks.length;
-                      const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-                      const completedToday = completedCount === totalTasks && totalTasks > 0;
+                    this.goalsWithTasks = results
+                      .map(result => {
+                        // Filter tasks to only show those visible on selected date
+                        const visibleTasks = result.tasks.filter(t => 
+                          isTaskVisibleOnDate(t, result.goal, this.selectedDate)
+                        );
+                        const goalTaskIds = new Set(visibleTasks.map(t => t.id));
+                        const entriesForGoal = tasksEntries.filter(e => goalTaskIds.has(e.taskId));
+                        const completedCount = entriesForGoal.filter(e => !!e.value).length;
+                        const totalTasks = visibleTasks.length;
+                        const percentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+                        const completedToday = completedCount === totalTasks && totalTasks > 0;
 
-                      return {
-                        goal: result.goal,
-                        tasks: result.tasks,
-                        completionPercentage: percentage,
-                        completedToday,
-                        completedCount
-                      };
-                    });
+                        return {
+                          goal: result.goal,
+                          tasks: visibleTasks,
+                          completionPercentage: percentage,
+                          completedToday,
+                          completedCount
+                        };
+                      })
+                      .filter(goalData => goalData.tasks.length > 0); // Remove goals with no visible tasks
 
                     console.log('Final goalsWithTasks:', this.goalsWithTasks);
                     this.calculateNextTask(tasksEntries);
@@ -246,6 +253,9 @@ export class UserDashboardComponent implements OnInit {
 
     for (const goalData of this.goalsWithTasks) {
       for (const task of goalData.tasks) {
+        // COMPREHENSIVE CHECK: Task must be visible on this date
+        // (goal active + matching day-of-week + task active)
+        if (!isTaskVisibleOnDate(task, goalData.goal, now)) continue;
         if (!task.lastTimeToComplete) continue;
 
         // Check if task is completed

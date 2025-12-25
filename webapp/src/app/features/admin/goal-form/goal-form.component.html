@@ -40,7 +40,7 @@
 
       <!-- Tasks Section -->
       <div class="tasks-section card">
-        <div class="card-header">
+        <div class="">
           <h3 class="card-title">Tasks</h3>
           <ht-button
             [label]="'Add Task'"
@@ -51,10 +51,19 @@
           </ht-button>
         </div>
 
-        <div class="card-body">
+        <div class="">
           <div class="tasks-list">
             <div class="task-item" *ngFor="let task of tasks; let i = index">
-              <div class="task-number">{{ i + 1 }}</div>
+              <div class="task-row-header">
+                <span class="task-number">{{ i + 1 }}</span>
+                <ht-button
+                  [icon]="'pi pi-trash'"
+                  [severity]="'danger'"
+                  [size]="'small'"
+                  [text]="true"
+                  (onClick)="removeTask(i)">
+                </ht-button>
+              </div>
               <div class="task-fields">
                 <ht-input
                   [(ngModel)]="task.name"
@@ -67,6 +76,24 @@
                   [placeholder]="'Last time (HH:mm, e.g., 14:00)'"
                   [disabled]="loading">
                 </ht-input>
+                <div class="task-days modern">
+                  <label class="days-label">Days <span class="optional-label">(optional)</span></label>
+                  <div class="days-options modern">
+                    <label class="day-chip modern"
+                      *ngFor="let d of dayOptions"
+                      [class.selected]="task.days?.includes(d.key)"
+                      tabindex="0"
+                      [attr.aria-checked]="task.days?.includes(d.key)"
+                      [attr.role]="'checkbox'">
+                      <input type="checkbox"
+                             [checked]="task.days?.includes(d.key)"
+                             (change)="onToggleDay(task, d.key, $event.target.checked)"
+                             [disabled]="loading"
+                             tabindex="-1" />
+                      <span class="chip-label">{{ d.label }}</span>
+                    </label>
+                  </div>
+                </div>
                 <ht-textarea
                   [(ngModel)]="task.additionalNotes"
                   [placeholder]="'Additional notes (optional)'"
@@ -74,13 +101,6 @@
                   [disabled]="loading">
                 </ht-textarea>
               </div>
-              <ht-button
-                [icon]="'pi pi-trash'"
-                [severity]="'danger'"
-                [size]="'small'"
-                [text]="true"
-                (onClick)="removeTask(i)">
-              </ht-button>
             </div>
           </div>
         </div>

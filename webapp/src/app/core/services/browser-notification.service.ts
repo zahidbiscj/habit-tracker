@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ToastService } from './toast.service';
 import { Observable, from, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -17,7 +18,7 @@ export interface BrowserNotificationOptions {
 export class BrowserNotificationService {
   private permission: NotificationPermission = 'default';
 
-  constructor() {
+  constructor(private toast: ToastService) {
     if ('Notification' in window) {
       this.permission = Notification.permission;
     }
@@ -43,7 +44,7 @@ export class BrowserNotificationService {
   requestPermission(): Observable<NotificationPermission> {
     if (!this.isSupported()) {
       console.warn('Browser does not support notifications');
-      alert('❌ Your browser does not support notifications. Please use Chrome, Edge, or Firefox.');
+      this.toast.error('Your browser does not support notifications. Please use Chrome, Edge, or Firefox.');
       return of('denied');
     }
 
@@ -63,14 +64,14 @@ export class BrowserNotificationService {
           console.log('✅ User granted notification permission!');
         } else if (permission === 'denied') {
           console.warn('❌ User denied notification permission');
-          // alert('⚠️ You blocked notifications!\n\nTo enable:\n1. Click the 🔒 lock icon in address bar\n2. Go to Site Settings\n3. Change Notifications to "Allow"\n4. Refresh the page');
+          // this.toast.warn('You blocked notifications! Please enable from site settings and refresh.');
         }
         
         return permission;
       }),
       catchError(error => {
         console.error('Error requesting notification permission:', error);
-        alert('Failed to request notification permission. Please check your browser settings.');
+        this.toast.error('Failed to request notification permission. Please check your browser settings.');
         return of('denied' as NotificationPermission);
       })
     );
@@ -84,13 +85,13 @@ export class BrowserNotificationService {
     
     if (!this.isSupported()) {
       console.warn('❌ Notifications not supported');
-      alert('Your browser does not support notifications');
+      this.toast.error('Your browser does not support notifications');
       return of(false);
     }
 
     if (this.permission !== 'granted') {
       console.warn('⚠️ Notification permission not granted:', this.permission);
-      alert(`Cannot show notification.\nPermission status: ${this.permission}\n\nPlease click "Test Instant Notification" first to grant permission.`);
+      this.toast.warn(`Cannot show notification. Permission status: ${this.permission}. Please enable notifications.`);
       return of(false);
     }
 
@@ -164,7 +165,7 @@ export class BrowserNotificationService {
       return of(true);
     } catch (error) {
       console.error('❌ Error showing direct notification:', error);
-      alert(`Failed to show notification: ${error}\n\nTry refreshing the page or using a different browser.`);
+      this.toast.error(`Failed to show notification: ${error}. Try refreshing the page or using a different browser.`);
       return of(false);
     }
   }

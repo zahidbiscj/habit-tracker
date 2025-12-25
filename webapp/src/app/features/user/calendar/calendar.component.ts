@@ -6,6 +6,7 @@ import { DailyLogFirebaseService } from '../../../core/services/firebase/daily-l
 import { AuthFirebaseService } from '../../../core/services/firebase/auth-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { Task } from '../../../core/models/task.model';
+import { isGoalActiveOnDate, isTaskScheduledOnDate, filterTasksForDate, isTaskVisibleOnDate } from '../../../core/utils/schedule.util';
 import { DailyLog } from '../../../core/models/daily-log.model';
 import { forkJoin, Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
@@ -166,10 +167,17 @@ export class CalendarComponent implements OnInit {
 
   calculateDayCompletion(date: Date, _taskIds: string[], logs: DailyLog[]): DayCompletion {
     // Find which goals are active on this day
-    const activeGoals = this.monthGoals.filter(g => this.isGoalActiveOnDate(g, date));
-    // For each active goal, get its tasks
-    const tasksForDay = this.monthAllTasks.filter(t => activeGoals.some(g => g.id === t.goalId) && t.active);
+    const activeGoals = this.monthGoals.filter(g => isGoalActiveOnDate(g, date));
+    // For each active goal, get its tasks that are visible on this date
+    // (respects both goal date range AND task day-of-week)
+    const tasksForDay = this.monthAllTasks.filter(t => {
+      const taskGoal = activeGoals.find(g => g.id === t.goalId);
+      return taskGoal && isTaskVisibleOnDate(t, taskGoal, date);
+    });
     const totalTasks = tasksForDay.length;
+    
+    // Note: If a goal has no visible tasks on this date, it won't affect the calculation
+    // This is intentional - goals without tasks for the day are effectively hidden
 
     // Find the log for this day
     const expectedLogId = this.generateDailyLogId(this.currentUserId, date);
@@ -230,7 +238,7 @@ export class CalendarComponent implements OnInit {
           }
           return this.goalService.getGoalsByIds(goalIds);
         }),
-        map(goals => goals.filter(g => this.isGoalActiveOnDate(g, this.selectedDate)))
+        map(goals => goals.filter(g => isGoalActiveOnDate(g, this.selectedDate)))
       );
   }
 
@@ -241,11 +249,17 @@ export class CalendarComponent implements OnInit {
 
     const taskObservables = activeGoals.map(goal =>
       this.taskService.getTasksByGoalId(goal.id).pipe(
-        map(tasks => ({ goal, tasks }))
+        map(tasks => ({
+          goal,
+          // Only include tasks that are visible on this date (goal+task logic)
+          tasks: (tasks || []).filter(t => isTaskVisibleOnDate(t, goal, this.selectedDate))
+        }))
       )
     );
 
-    return forkJoin(taskObservables);
+    return forkJoin(taskObservables).pipe(
+      map(goalTasksArr => goalTasksArr.filter(gwt => gwt.tasks.length > 0)) // Remove goals with no visible tasks
+    );
   }
 
   private buildSelectedDayData(goalsWithTasks: Array<{goal: Goal, tasks: Task[]}>): Observable<{goals: GoalWithCompletion[], accordions: GoalAccordion[]}> {
@@ -426,11 +440,12 @@ export class CalendarComponent implements OnInit {
       }
 
       // Find which goals are active on this specific day
-      const activeGoalsForDay = this.monthGoals.filter(g => this.isGoalActiveOnDate(g, currentDayDate));
+      const activeGoalsForDay = this.monthGoals.filter(g => isGoalActiveOnDate(g, currentDayDate));
       
       // For each active goal, count its tasks as assigned for this day
       activeGoalsForDay.forEach(goal => {
-        const tasksForGoal = this.monthAllTasks.filter(t => t.goalId === goal.id && t.active);
+        const tasksForGoal = this.monthAllTasks.filter(t => t.goalId === goal.id)
+          .filter(t => isTaskScheduledOnDate(t, currentDayDate));
         totalAssignedTasks += tasksForGoal.length;
         
         // Check daily log for this day to count completed tasks

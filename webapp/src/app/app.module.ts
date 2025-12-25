@@ -20,6 +20,9 @@ import { AppComponent } from './app.component';
 
 // Shared module
 import { SharedModule } from './shared/shared.module';
+// PrimeNG Toast
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 // Service interfaces and implementations
 import { IAuthService } from './core/services/interfaces/auth.service.interface';
@@ -83,6 +86,7 @@ import { TestNotificationComponent } from './features/admin/notifications-list/t
     ReactiveFormsModule,
     AppRoutingModule,
     SharedModule,
+    ToastModule,
     // PWA Service Worker
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
@@ -102,7 +106,9 @@ import { TestNotificationComponent } from './features/admin/notifications-list/t
     TaskFirebaseService,
     DailyLogFirebaseService,
     GoalAssignmentFirebaseService,
-    NotificationFirebaseService
+    NotificationFirebaseService,
+    // PrimeNG Toast Message Service
+    MessageService
   ],
   bootstrap: [AppComponent]
 })

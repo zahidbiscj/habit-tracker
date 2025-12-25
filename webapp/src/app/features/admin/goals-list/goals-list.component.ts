@@ -5,6 +5,7 @@ import { TaskFirebaseService } from '../../../core/services/firebase/task-fireba
 import { GoalAssignmentFirebaseService } from '../../../core/services/firebase/goal-assignment-firebase.service';
 import { Goal } from '../../../core/models/goal.model';
 import { TableColumn, TableAction } from '../../../shared/components/common/ht-table/ht-table.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-goals-list',
@@ -21,7 +22,8 @@ export class GoalsListComponent implements OnInit {
     private goalService: GoalFirebaseService,
     private taskService: TaskFirebaseService,
     private goalAssignmentService: GoalAssignmentFirebaseService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {
     this.setupTable();
   }
@@ -90,7 +92,7 @@ export class GoalsListComponent implements OnInit {
         console.error('Error loading goals:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
         this.loading = false;
-        alert('Failed to load goals: ' + (error.message || 'Unknown error'));
+        this.toast.error('Failed to load goals: ' + (error.message || 'Unknown error'));
       }
     });
   }
@@ -110,7 +112,7 @@ export class GoalsListComponent implements OnInit {
   editGoal(goal: Goal): void {
     console.log('Editing goal:', goal);
     if (!goal || !goal.id) {
-      alert('Invalid goal selected');
+      this.toast.warn('Invalid goal selected');
       return;
     }
     this.router.navigate(['/admin/goals/edit', goal.id]);
@@ -119,7 +121,7 @@ export class GoalsListComponent implements OnInit {
   deleteGoal(goal: Goal): void {
     console.log('Deleting goal:', goal);
     if (!goal || !goal.id) {
-      alert('Invalid goal selected');
+      this.toast.warn('Invalid goal selected');
       return;
     }
     
@@ -137,27 +139,27 @@ export class GoalsListComponent implements OnInit {
             this.goalService.deleteGoal(goal.id).subscribe({
               next: () => {
                 this.loading = false;
-                alert('Goal deleted successfully');
+                this.toast.success('Goal deleted successfully');
                 this.loadGoals();
               },
               error: (error) => {
                 console.error('Error deleting goal:', error);
                 this.loading = false;
-                alert('Failed to delete goal');
+                this.toast.error('Failed to delete goal');
               }
             });
           },
           error: (error) => {
             console.error('Error deleting assignments:', error);
             this.loading = false;
-            alert('Failed to delete goal assignments');
+            this.toast.error('Failed to delete goal assignments');
           }
         });
       },
       error: (error) => {
         console.error('Error deleting tasks:', error);
         this.loading = false;
-        alert('Failed to delete goal tasks');
+        this.toast.error('Failed to delete goal tasks');
       }
     });
   }

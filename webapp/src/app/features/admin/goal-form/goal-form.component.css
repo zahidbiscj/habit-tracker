@@ -1,54 +1,115 @@
-.goal-form-container {
-  padding: 0;
-  max-width: 680px; /* narrower, compact */
-  margin: 0 auto;
-}
-
-.form-content {
+/* Flexbox for task row header: number left, delete right */
+.task-row-header {
   display: flex;
-  flex-direction: column;
-  gap: 1rem; /* tighter spacing */
-}
-
-.date-range {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-.tasks-section,
-.assignment-section {
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  padding: 0.75rem; /* tighter */
-}
-
-/* Slightly reduce card header/body padding locally */
-.card-header { padding: 0.5rem 0.75rem; }
-.card-body { padding: 0.5rem 0.75rem 0.75rem 0.75rem; }
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
+  flex-direction: row;
   align-items: center;
-  margin-bottom: 1rem;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  width: 100%;
 }
-
-.section-header h3 {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.tasks-list {
+.task-number {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #1976d2;
+  color: #fff;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px 0 rgba(25, 118, 210, 0.08);
+}
+.task-row-header ht-button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.goal-form-container {
+  /* Modern day-of-week selector styles */
+  .task-days.modern {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px 0 rgba(30, 34, 90, 0.04);
+    padding: 16px 14px 10px 14px;
+    margin-bottom: 16px;
+    border: 1px solid #f0f0f0;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+  }
+  .optional-label {
+    color: #888;
+    font-weight: 400;
+    font-size: 13px;
+  }
+  .days-options.modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px 1px;
+    max-width: 340px;
+    margin-top: 6px;
+    margin-bottom: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: 90px;
+  }
+  .day-chip.modern {
+    display: flex;
+    align-items: center;
+    background: #f7fafd;
+    border-radius: 999px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 6px 18px 6px 10px;
+    font-size: 15px;
+    cursor: pointer;
+    border: 1.5px solid #e3e8ee;
+    transition: background 0.18s, border 0.18s, box-shadow 0.18s, color 0.18s;
+    user-select: none;
+    min-width: 54px;
+    min-height: 36px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 4px 0 rgba(30, 34, 90, 0.04);
+    color: #2d3a4a;
+    font-weight: 500;
+    outline: none;
+  }
+  .day-chip.modern input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: #1976d2;
+  }
+  .day-chip.modern.selected,
+  .day-chip.modern:active,
+  .day-chip.modern:focus {
+    background: linear-gradient(90deg, #1976d2 80%, #2196f3 100%);
+    color: #fff;
+    border: 1.5px solid #1976d2;
+    box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.10);
+  }
+  .day-chip.modern.selected input[type="checkbox"] {
+    accent-color: #fff;
+  }
+  .day-chip.modern:hover:not(.selected) {
+    background: #e3f0fd;
+    border: 1.5px solid #90caf9;
+    color: #1976d2;
+  }
+  .chip-label {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
   gap: 0.75rem;
 }
 
 .task-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto;
   gap: 0.5rem;
   align-items: start;
   padding: 0.75rem;
@@ -75,6 +136,39 @@
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
+}
+
+/* Day selection layout */
+.task-days {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.days-label {
+  font-size: 0.85rem;
+  color: #616161;
+}
+.days-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+}
+.day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  flex: 0 0 calc(33.33% - 0.6rem);
+}
+.day-chip input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #667eea;
+}
+.day-chip span {
+  font-size: 0.85rem;
 }
 
 .assignment-section h3 {
