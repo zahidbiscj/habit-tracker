@@ -1,6 +1,7 @@
 {
   "hosting": {
     "public": "webapp/dist/habit-tracker/browser",
+    "site": "habit-tracker-1e347",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [{"source": "**", "destination": "/index.html"}]
   },
