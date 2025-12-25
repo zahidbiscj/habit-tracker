@@ -209,8 +209,56 @@ exports.onNotificationCreate = functions.firestore
     
     if (!notif) return null;
     
-    // Schedule the first occurrence
+    // Send immediate notification to all users
     if (notif.active) {
+      const usersSnapshot = await admin.firestore()
+        .collection('users')
+        .where('active', '==', true)
+        .get();
+      
+      if (!usersSnapshot.empty) {
+        const title = notif.title || 'Habit Tracker';
+        const body = notif.body || 'New notification';
+        
+        const messages = [];
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const tokenList = Array.isArray(userData.fcmTokens) && userData.fcmTokens.length
+            ? userData.fcmTokens
+            : (userData.fcmToken ? [userData.fcmToken] : []);
+          
+          for (const token of tokenList) {
+            messages.push({
+              token,
+              notification: { title, body },
+              data: {
+                notificationId,
+                time: notif.time || '',
+                type: 'immediate'
+              }
+            });
+          }
+        }
+        
+        if (messages.length > 0) {
+          const chunkSize = 500;
+          let totalSent = 0;
+          
+          for (let i = 0; i < messages.length; i += chunkSize) {
+            const chunk = messages.slice(i, i + chunkSize);
+            try {
+              const response = await admin.messaging().sendAll(chunk);
+              totalSent += response.successCount;
+            } catch (error) {
+              console.error('Error sending immediate notification:', error);
+            }
+          }
+          
+          console.log(`✅ Sent ${totalSent} immediate notifications for "${title}"`);
+        }
+      }
+      
+      // Also schedule for future recurring occurrences
       await scheduleNotificationTask(notificationId, notif);
     }
     
