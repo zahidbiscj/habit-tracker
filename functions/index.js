@@ -23,7 +23,6 @@ exports.checkAndSendNotifications = functions.pubsub
 
     const usersSnapshot = await admin.firestore()
       .collection('users')
-      .where('role', '==', 'user')
       .where('active', '==', true)
       .get();
 
@@ -67,7 +66,6 @@ exports.onNotificationCreate = functions.firestore
 
     const usersSnapshot = await admin.firestore()
       .collection('users')
-      .where('role', '==', 'user')
       .where('active', '==', true)
       .get();
 
