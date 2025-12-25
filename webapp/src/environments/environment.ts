@@ -9,5 +9,5 @@ export const environment = {
         appId: "1:107464777450:web:a4032afe0b553b18720193",
         vapidKey: "BBQw-v24b2f3ZAAnIiOBuY08V0rcfUblA5RFBFYyQ4ucCYyC6MTZ4WJAJJemq5lMrXa_OfIqYXuxnHRxZL2wpf8"
     },
-    timezone: 'Asia/Dhaka'
+    timezone: 'Asia/Kuala_Lumpur'
 };

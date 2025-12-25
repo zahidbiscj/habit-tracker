@@ -2439,66 +2439,84 @@ src/
 
 ## Firebase Cloud Functions (For Push Notifications)
 
+**Simple Event-Triggered Approach** — No periodic checks, only runs when notification is created.
+
 ```javascript
 // functions/index.js
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+
 admin.initializeApp();
 
-// Scheduled function that runs every hour to check for notifications
-exports.checkAndSendNotifications = functions.pubsub
-  .schedule('0 * * * *') // Run every hour at minute 0
-  .timeZone('Asia/Dhaka')
-  .onRun(async (context) => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentDay = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-    const currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+// Event-triggered function: Sends push notification when notification document is created
+exports.onNotificationCreate = functions.firestore
+  .document('notifications/{notificationId}')
+  .onCreate(async (snap, context) => {
+    const notif = snap.data();
     
-    // Get all active notifications that match current time and day
-    const notificationsSnapshot = await admin.firestore()
-      .collection('notifications')
+    if (!notif || !notif.active) {
+      console.log('Notification is inactive or empty');
+      return null;
+    }
+
+    // Get all active users with FCM tokens
+    const usersSnapshot = await admin.firestore()
+      .collection('users')
       .where('active', '==', true)
-      .where('time', '==', currentTime)
       .get();
-    
-    for (const notifDoc of notificationsSnapshot.docs) {
-      const notification = notifDoc.data();
+
+    if (usersSnapshot.empty) {
+      console.log('No active users found');
+      return null;
+    }
+
+    const title = notif.title || 'Habit Tracker';
+    const body = notif.body || 'New notification';
+
+    // Build messages for all user tokens
+    const messages = [];
+    for (const userDoc of usersSnapshot.docs) {
+      const userData = userDoc.data();
+      const tokenList = Array.isArray(userData.fcmTokens) && userData.fcmTokens.length
+        ? userData.fcmTokens
+        : (userData.fcmToken ? [userData.fcmToken] : []);
       
-      // Check if today is in the daysOfWeek array
-      if (notification.daysOfWeek.includes(currentDay)) {
-        // Get all active users with FCM tokens
-        const usersSnapshot = await admin.firestore()
-          .collection('users')
-          .where('role', '==', 'user')
-          .where('active', '==', true)
-          .get();
-        
-        // Send notification to all users
-        const messages = [];
-        for (const userDoc of usersSnapshot.docs) {
-          const fcmToken = userDoc.data().fcmToken;
-          
-          if (fcmToken) {
-            messages.push({
-              notification: {
-                title: notification.title,
-                body: notification.body,
-              },
-              token: fcmToken,
-            });
+      for (const token of tokenList) {
+        messages.push({
+          token,
+          notification: { title, body },
+          data: {
+            notificationId: context.params.notificationId,
+            time: notif.time || '',
+            type: 'notification'
           }
-        }
-        
-        // Send batch notifications
-        if (messages.length > 0) {
-          await admin.messaging().sendEach(messages);
-          console.log(`Sent ${messages.length} notifications for: ${notification.title}`);
-        }
+        });
       }
     }
+
+    if (messages.length === 0) {
+      console.log('No FCM tokens found');
+      return null;
+    }
+
+    // Send in chunks of 500 (FCM limit)
+    const chunkSize = 500;
+    let totalSent = 0;
     
+    for (let i = 0; i < messages.length; i += chunkSize) {
+      const chunk = messages.slice(i, i + chunkSize);
+      try {
+        const response = await admin.messaging().sendAll(chunk);
+        totalSent += response.successCount;
+        if (response.failureCount > 0) {
+          console.warn(`${response.failureCount} messages failed in chunk`);
+        }
+      } catch (error) {
+        console.error('Error sending chunk:', error);
+      }
+    }
+
+    console.log(`✅ Sent ${totalSent}/${messages.length} notifications for "${title}"`);
     return null;
   });
 
