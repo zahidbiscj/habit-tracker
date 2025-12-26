@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM Notification Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #357ae8; }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #e8f4f8;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .code {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4285f4;
+        }
+        .step h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Push Notification Test Tool</h1>
+        <p>Use this tool to test FCM notifications setup for your Habit Tracker app.</p>
+
+        <div class="step">
+            <h3>Step 1: Check Browser Support</h3>
+            <button onclick="checkSupport()">Check Support</button>
+            <div id="support-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Request Permission</h3>
+            <button onclick="requestPermission()">Request Permission</button>
+            <div id="permission-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Register Service Worker</h3>
+            <button onclick="registerServiceWorker()">Register Service Worker</button>
+            <div id="sw-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Get FCM Token</h3>
+            <button onclick="getFCMToken()">Get FCM Token</button>
+            <div id="token-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Test Notification</h3>
+            <button onclick="testNotification()">Test Local Notification</button>
+            <div id="test-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Troubleshooting</h3>
+            <button onclick="clearAll()">Clear All & Reset</button>
+            <button onclick="checkCurrentState()">Check Current State</button>
+            <div id="troubleshoot-status"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyClnaSXQRuc6EAKMiSOe_vhU_heEFoDrDI",
+            authDomain: "habit-tracker-1e347.firebaseapp.com",
+            projectId: "habit-tracker-1e347",
+            storageBucket: "habit-tracker-1e347.firebasestorage.app",
+            messagingSenderId: "107464777450",
+            appId: "1:107464777450:web:a4032afe0b553b18720193"
+        };
+
+        const vapidKey = "BBQw-v24b2f3ZAAnIiOBuY08V0rcfUblA5RFBFYyQ4ucCYyC6MTZ4WJAJJemq5lMrXa_OfIqYXuxnHRxZL2wpf8";
+
+        let app, messaging;
+
+        window.checkSupport = function() {
+            const statusDiv = document.getElementById('support-status');
+            const checks = {
+                'Service Workers': 'serviceWorker' in navigator,
+                'Notifications': 'Notification' in window,
+                'Push API': 'PushManager' in window,
+                'HTTPS/Localhost': location.protocol === 'https:' || location.hostname === 'localhost'
+            };
+
+            let html = '<div class="status">';
+            let allSupported = true;
+
+            for (const [feature, supported] of Object.entries(checks)) {
+                const icon = supported ? '✅' : '❌';
+                html += `${icon} ${feature}: ${supported ? 'Supported' : 'Not Supported'}<br>`;
+                if (!supported) allSupported = false;
+            }
+
+            html += '</div>';
+            if (allSupported) {
+                html += '<div class="status success">✅ All features supported! You can proceed.</div>';
+            } else {
+                html += '<div class="status error">❌ Some features are not supported. FCM may not work.</div>';
+            }
+
+            statusDiv.innerHTML = html;
+        };
+
+        window.requestPermission = async function() {
+            const statusDiv = document.getElementById('permission-status');
+            
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    statusDiv.innerHTML = '<div class="status success">✅ Permission granted!</div>';
+                } else if (permission === 'denied') {
+                    statusDiv.innerHTML = '<div class="status error">❌ Permission denied. Reset in browser settings.</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="status warning">⚠️ Permission dismissed.</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.registerServiceWorker = async function() {
+            const statusDiv = document.getElementById('sw-status');
+            
+            try {
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+                await navigator.serviceWorker.ready;
+                
+                statusDiv.innerHTML = `<div class="status success">✅ Service Worker registered successfully!</div>
+                                      <div class="code">Scope: ${registration.scope}</div>`;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Failed to register Service Worker<br>
+                                      Error: ${error.message}<br><br>
+                                      Make sure firebase-messaging-sw.js exists at the root of your app.</div>`;
+            }
+        };
+
+        window.getFCMToken = async function() {
+            const statusDiv = document.getElementById('token-status');
+            
+            try {
+                if (!app) {
+                    app = initializeApp(firebaseConfig);
+                    messaging = getMessaging(app);
+                }
+
+                const registration = await navigator.serviceWorker.ready;
+                const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+                
+                if (token) {
+                    statusDiv.innerHTML = `<div class="status success">✅ FCM Token generated!</div>
+                                          <div class="code">${token}</div>
+                                          <p>Save this token to Firestore user document in fcmTokens array.</p>`;
+                    
+                    // Setup foreground message handler
+                    onMessage(messaging, (payload) => {
+                        console.log('Foreground message received:', payload);
+                        new Notification(
+                            payload.notification?.title || 'Habit Tracker',
+                            {
+                                body: payload.notification?.body || '',
+                                icon: '/assets/icons/icon-192x192.svg'
+                            }
+                        );
+                    });
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">❌ No token received. Check console for errors.</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error getting token:<br>${error.message}<br><br>
+                                      Check:<br>
+                                      1. Service worker is registered<br>
+                                      2. Notification permission is granted<br>
+                                      3. VAPID key is correct</div>`;
+            }
+        };
+
+        window.testNotification = async function() {
+            const statusDiv = document.getElementById('test-status');
+            
+            try {
+                if (Notification.permission !== 'granted') {
+                    statusDiv.innerHTML = '<div class="status error">❌ Permission not granted. Request permission first.</div>';
+                    return;
+                }
+
+                const notification = new Notification('Test Notification', {
+                    body: 'If you see this, notifications are working! 🎉',
+                    icon: '/assets/icons/icon-192x192.svg',
+                    badge: '/assets/icons/icon-72x72.svg',
+                    tag: 'test-notification'
+                });
+
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+
+                statusDiv.innerHTML = '<div class="status success">✅ Test notification sent! Check your notification tray.</div>';
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.clearAll = async function() {
+            const statusDiv = document.getElementById('troubleshoot-status');
+            
+            try {
+                // Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+
+                // Clear localStorage
+                localStorage.clear();
+
+                statusDiv.innerHTML = `<div class="status success">✅ Cleared:<br>
+                                      - ${registrations.length} service worker(s)<br>
+                                      - localStorage<br><br>
+                                      Reload the page and start from Step 1.</div>`;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.checkCurrentState = async function() {
+            const statusDiv = document.getElementById('troubleshoot-status');
+            
+            let html = '<div class="status"><h4>Current State:</h4>';
+            
+            // Permission
+            html += `<strong>Permission:</strong> ${Notification.permission}<br>`;
+            
+            // Service Workers
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            html += `<strong>Service Workers:</strong> ${registrations.length} registered<br>`;
+            registrations.forEach(reg => {
+                html += `&nbsp;&nbsp;- ${reg.scope}<br>`;
+            });
+            
+            // localStorage
+            html += `<strong>localStorage:</strong> ${localStorage.length} items<br>`;
+            
+            html += '</div>';
+            statusDiv.innerHTML = html;
+        };
+    </script>
+</body>
+</html>

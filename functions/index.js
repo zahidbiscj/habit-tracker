@@ -14,14 +14,41 @@ const timezone = 'Asia/Kuala_Lumpur';
 function getNextOccurrence(timeString, daysOfWeek) {
   const [hours, minutes] = timeString.split(':').map(Number);
   
-  // Get current time in Malaysia timezone
+  // Get current time in UTC
   const now = new Date();
-  const malaysiaTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  
+  // Convert to Malaysia timezone using proper date conversion
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(now);
+  const malaysiaDate = {};
+  parts.forEach(part => {
+    if (part.type !== 'literal') {
+      malaysiaDate[part.type] = parseInt(part.value, 10);
+    }
+  });
+  
+  const malaysiaTime = new Date(
+    malaysiaDate.year,
+    malaysiaDate.month - 1,
+    malaysiaDate.day,
+    malaysiaDate.hour,
+    malaysiaDate.minute,
+    malaysiaDate.second
+  );
+  
+  const currentDay = malaysiaTime.getDay();
   
   // Find the next matching day
-  const currentDay = malaysiaTime.getDay();
-  let daysToAdd = null;
-  
   for (let i = 0; i <= 7; i++) {
     const checkDay = (currentDay + i) % 7;
     if (daysOfWeek.includes(checkDay)) {
@@ -32,7 +59,8 @@ function getNextOccurrence(timeString, daysOfWeek) {
       // If it's today, check if time hasn't passed yet
       if (i === 0 && targetTime <= malaysiaTime) continue;
       
-      return targetTime;
+      // Convert back to UTC for Cloud Tasks
+      return new Date(targetTime.toLocaleString('en-US', { timeZone: 'UTC' }));
     }
   }
   
@@ -75,6 +103,11 @@ async function scheduleNotificationTask(notificationId, notificationData) {
     console.log(`✅ Scheduled notification ${notificationId} for ${nextTime.toLocaleString('en-US', { timeZone: timezone })}`);
   } catch (error) {
     console.error(`❌ Failed to schedule ${notificationId}:`, error.message);
+    // If queue doesn't exist, log instructions
+    if (error.message.includes('NOT_FOUND') || error.message.includes('queue')) {
+      console.error('⚠️  Cloud Tasks queue not found. Create it with:');
+      console.error(`   gcloud tasks queues create ${queue} --location=${location}`);
+    }
   }
 }
 
@@ -254,12 +287,19 @@ exports.onNotificationCreate = functions.firestore
             }
           }
           
-          console.log(`✅ Sent ${totalSent} immediate notifications for "${title}"`);
+          console.log(`✅ Sent ${totalSent}/${messages.length} immediate notifications for "${title}"`);
+        } else {
+          console.log('⚠️  No FCM tokens found for any users');
         }
+      } else {
+        console.log('⚠️  No active users found');
       }
       
       // Also schedule for future recurring occurrences
+      console.log(`📅 Scheduling recurring notifications for ${notificationId}...`);
       await scheduleNotificationTask(notificationId, notif);
+    } else {
+      console.log(`⏸️  Notification ${notificationId} is inactive, skipping`);
     }
     
     return null;

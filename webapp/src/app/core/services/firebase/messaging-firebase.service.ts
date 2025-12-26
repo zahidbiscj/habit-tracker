@@ -28,8 +28,9 @@ export class MessagingFirebaseService {
           return of(null);
         }
 
-        // Register messaging service worker
-        return from(navigator.serviceWorker.register('/firebase-messaging-sw.js')).pipe(
+        // Register messaging service worker - use absolute path
+        const swPath = self.location?.origin ? '/firebase-messaging-sw.js' : './firebase-messaging-sw.js';
+        return from(navigator.serviceWorker.register(swPath, { scope: '/' })).pipe(
           switchMap(swReg => {
             const app = initializeApp(environment.firebase);
             this.messaging = getMessaging(app);

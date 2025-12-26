@@ -46,6 +46,7 @@ The Next Task widget is always displayed at the top of the user dashboard. It sh
 - Mobile-friendly, swipeable card UI for easy navigation
 ## 🔔 Notification Push (FCM) — UI & Trigger
 
+
 ### Notification UI (Tray)
 ```
 ┌───────────────────────────────┐
@@ -55,10 +56,38 @@ The Next Task widget is always displayed at the top of the user dashboard. It sh
 └───────────────────────────────┘
 ```
 
-### How It Triggers
-- Service Worker receives FCM push at scheduled time.
-- Backend sender triggers push exactly at HH:mm.
-- Works if app is closed; no setInterval/minute polling.
+### How It Works Technically (Current Flow)
+
+**1. FCM Token Registration (Multi-Device Support)**
+  - When a user logs in, the app registers a service worker and requests notification permission.
+  - The app generates an FCM token for the device and saves it to the user’s Firestore document (`fcmTokens` array).
+  - All devices where the user logs in will receive notifications.
+
+**2. Admin Creates Notification**
+  - Admin uses the notification form to create a new notification (title, body, time, days).
+  - The notification is saved in Firestore.
+
+**3. Immediate Push**
+  - A Firestore trigger (`onNotificationCreate`) sends the notification instantly to all active users’ devices (using all tokens in `fcmTokens`).
+
+**4. Scheduled Push (Cloud Tasks + Timezone Handling)**
+  - Cloud Functions schedule future notifications using Cloud Tasks, based on Malaysia timezone (Asia/Kuala_Lumpur).
+  - At the scheduled time, the function queries all active users and sends the notification to all their devices.
+  - Timezone conversion is handled using `Intl.DateTimeFormat` for accuracy.
+
+**5. Service Worker Handling**
+  - If the app is open, notifications show via the browser notification service.
+  - If the app is closed, the service worker displays notifications using `onBackgroundMessage`.
+
+**6. Error Handling & Logging**
+  - If Cloud Tasks queue is missing, clear error and setup instructions are logged.
+  - Logs show how many notifications were sent, to which users, and any failures.
+
+**7. Testing & Debugging**
+  - Use the included test tool (`test-notifications.html`) to verify setup.
+  - Check logs and troubleshooting guides for any issues.
+
+**Result:** Notifications reliably show on all devices where the user is logged in, at the correct time, with robust error handling and easy debugging.
 
 ### Get VAPID Key (1–2–3)
 1. Open Firebase Console → Project Settings → Cloud Messaging.
